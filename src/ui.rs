@@ -13,6 +13,8 @@ use gpui::{prelude::*, *};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use rand::seq::SliceRandom;
 
+type TrackMenuAction = Box<dyn Fn(&mut AppView, &Track, &mut Context<AppView>) + 'static>;
+
 #[derive(Default)]
 pub struct AppView {
     statistics: crate::statistics::Statistics,
@@ -572,11 +574,11 @@ impl AppView {
             return;
         }
         let track = if index < self.queue.len() {
-            self.queue.drain(..=index).last()
+            self.queue.drain(..=index).next_back()
         } else {
             let context_index = index - self.queue.len();
             self.queue.clear();
-            self.continuation.drain(..=context_index).last()
+            self.continuation.drain(..=context_index).next_back()
         };
         if let Some(track) = track {
             self.start_track(track, cx);
@@ -3754,9 +3756,7 @@ impl AppView {
         let menu_item = |id: &'static str,
                          icon_name: &'static str,
                          title: &'static str,
-                         action: Box<
-            dyn Fn(&mut AppView, &Track, &mut Context<AppView>) + 'static,
-        >| {
+                         action: TrackMenuAction| {
             let item_track = track.clone();
             div()
                 .id(id)
