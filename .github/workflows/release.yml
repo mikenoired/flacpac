@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Tag to build and publish
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -37,7 +43,7 @@ jobs:
       - name: Package release artifact
         env:
           ARCH: ${{ matrix.arch }}
-          VERSION: ${{ github.ref_name }}
+          VERSION: ${{ inputs.release_tag || github.ref_name }}
         run: |
           version="${VERSION#v}"
           app="Flacpac.app"
@@ -67,8 +73,8 @@ jobs:
         with:
           name: macos-${{ matrix.arch }}
           path: |
-            flacpac-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip
-            flacpac-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip.sha256
+            flacpac-${{ inputs.release_tag || github.ref_name }}-macos-${{ matrix.arch }}.zip
+            flacpac-${{ inputs.release_tag || github.ref_name }}-macos-${{ matrix.arch }}.zip.sha256
           if-no-files-found: error
           retention-days: 1
 
@@ -90,7 +96,7 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           gh release create "$TAG" artifacts/* \
             --title "Flacpac $TAG" \
