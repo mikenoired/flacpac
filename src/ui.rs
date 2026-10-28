@@ -1999,6 +1999,8 @@ impl Render for AppView {
                                     index,
                                     widths,
                                     numbered: true,
+                                    show_artwork: true,
+                                    album_detail: false,
                                     queued: true,
                                     queue_len: this.queue.len(),
                                     current: current.clone(),
@@ -2019,7 +2021,9 @@ impl Render for AppView {
                                     TrackRowState {
                                         index,
                                         widths,
-                                        numbered: page == Page::Tracks,
+                                        numbered: matches!(page, Page::Tracks | Page::AlbumDetail),
+                                        show_artwork: page != Page::AlbumDetail,
+                                        album_detail: page == Page::AlbumDetail,
                                         queued: false,
                                         queue_len: 0,
                                         current: current.clone(),
@@ -2126,6 +2130,30 @@ impl Render for ColumnResize {
 }
 impl AppView {
     fn table_header(&self, p: Palette, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.page == Page::AlbumDetail {
+            return div()
+                .id("track-table-header")
+                .h(px(32.))
+                .flex_shrink_0()
+                .flex()
+                .items_center()
+                .px_3()
+                .border_b_1()
+                .border_color(rgb(p.line))
+                .text_size(px(10.))
+                .text_color(rgb(p.muted))
+                .child(div().w(px(34.)).flex_shrink_0().child("#"))
+                .child(div().flex_1().min_w_0().px_2().child("TITLE / ARTIST"))
+                .child(
+                    div()
+                        .w(px(88.))
+                        .flex_shrink_0()
+                        .px_2()
+                        .text_right()
+                        .child("LENGTH"),
+                )
+                .into_any_element();
+        }
         let queued = self.page == Page::Queue;
         let ratios = if self.table_ratios == [0.; 4] {
             [0.44, 0.28, 0.20, 0.08]
@@ -2276,6 +2304,7 @@ impl AppView {
                     }),
             )
             .when(queued, |el| el.child(div().w(px(108.)).flex_shrink_0()))
+            .into_any_element()
     }
 }
 fn queue_sidebar_row(
@@ -2350,6 +2379,8 @@ impl Render for QueueDrag {
 struct TrackRowState {
     widths: [f32; 4],
     numbered: bool,
+    show_artwork: bool,
+    album_detail: bool,
     index: usize,
     queued: bool,
     queue_len: usize,
@@ -2366,6 +2397,8 @@ fn track_row(
     let TrackRowState {
         widths,
         numbered,
+        show_artwork,
+        album_detail,
         index,
         queued,
         queue_len,
@@ -2452,20 +2485,26 @@ fn track_row(
         )
         .child(
             div()
-                .w(px(widths[0]))
+                .w(px(if album_detail {
+                    widths.iter().sum::<f32>() - 88.
+                } else {
+                    widths[0]
+                }))
                 .flex_shrink_0()
                 .px_2()
                 .min_w_0()
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap_3()
-                .child(artwork(
-                    track.cover_path.clone(),
-                    track.title.clone(),
-                    36.,
-                    p,
-                ))
+                .when(show_artwork, |el| el.gap_3())
+                .when(show_artwork, |el| {
+                    el.child(artwork(
+                        track.cover_path.clone(),
+                        track.title.clone(),
+                        36.,
+                        p,
+                    ))
+                })
                 .child(
                     div()
                         .flex_1()
@@ -2499,38 +2538,42 @@ fn track_row(
                         ),
                 ),
         )
+        .when(!album_detail, |el| {
+            el.child(
+                div()
+                    .id(format!("album-link-{index}"))
+                    .w(px(widths[1]))
+                    .flex_shrink_0()
+                    .px_2()
+                    .text_size(px(11.))
+                    .text_color(rgb(p.muted))
+                    .cursor_pointer()
+                    .hover(move |s| s.text_color(rgb(p.accent)))
+                    .truncate()
+                    .on_click(move |_, _, cx| {
+                        cx.stop_propagation();
+                        let _ = album_view.update(cx, |this, cx| {
+                            this.open_album(album.clone(), album_artist.clone(), cx)
+                        });
+                    })
+                    .child(track.album.clone()),
+            )
+        })
+        .when(!album_detail, |el| {
+            el.child(
+                div()
+                    .w(px(widths[2]))
+                    .flex_shrink_0()
+                    .px_2()
+                    .text_size(px(11.))
+                    .text_color(rgb(p.muted))
+                    .truncate()
+                    .child(format_added(track.added_unix_ms, unix_now_ms())),
+            )
+        })
         .child(
             div()
-                .id(format!("album-link-{index}"))
-                .w(px(widths[1]))
-                .flex_shrink_0()
-                .px_2()
-                .text_size(px(11.))
-                .text_color(rgb(p.muted))
-                .cursor_pointer()
-                .hover(move |s| s.text_color(rgb(p.accent)))
-                .truncate()
-                .on_click(move |_, _, cx| {
-                    cx.stop_propagation();
-                    let _ = album_view.update(cx, |this, cx| {
-                        this.open_album(album.clone(), album_artist.clone(), cx)
-                    });
-                })
-                .child(track.album.clone()),
-        )
-        .child(
-            div()
-                .w(px(widths[2]))
-                .flex_shrink_0()
-                .px_2()
-                .text_size(px(11.))
-                .text_color(rgb(p.muted))
-                .truncate()
-                .child(format_added(track.added_unix_ms, unix_now_ms())),
-        )
-        .child(
-            div()
-                .w(px(widths[3]))
+                .w(px(if album_detail { 88. } else { widths[3] }))
                 .flex_shrink_0()
                 .px_2()
                 .text_size(px(11.))
