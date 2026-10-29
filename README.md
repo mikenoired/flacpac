@@ -97,6 +97,15 @@ Music files are read without modifying their tags or contents.
 
 ## Development
 
+`rust-toolchain.toml` pins the compiler, Clippy, and rustfmt used locally and in
+CI. Update the pinned version in a separate change and run the checks below.
+Pull requests and pushes to `main` run checks on Apple Silicon and Intel macOS.
+
+To release, update `package.version` in `Cargo.toml` and refresh `Cargo.lock`,
+then push a matching `v<version>` tag. Publication requires both architectures
+to pass checks and produce validated app bundles. Build artifacts are retained
+for seven days; published release assets remain available on GitHub Releases.
+
 ```sh
 cargo fmt --check
 cargo test --locked

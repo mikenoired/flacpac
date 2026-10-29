@@ -6,12 +6,17 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  check:
+    name: Check release commit
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: Build macOS (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +31,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup show active-toolchain
+
+      - name: Check release version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(cargo metadata --no-deps --locked --format-version 1 | python3 -c 'import json, sys; print(next(p["version"] for p in json.load(sys.stdin)["packages"] if p["name"] == "flacpac-rusty"))')
+          if [[ "$TAG" != "v$version" ]]; then
+            echo "::error::Tag $TAG does not match Cargo.toml version $version"
+            exit 1
+          fi
 
       - name: Cache Cargo files
         uses: Swatinem/rust-cache@v2
@@ -57,9 +72,15 @@ jobs:
           </dict>
           </plist>
           PLIST
+          plutil -lint "$app/Contents/Info.plist"
+          expected_arch="$ARCH"
+          if [[ "$ARCH" == "aarch64" ]]; then expected_arch="arm64"; fi
+          test "$(lipo -archs "$app/Contents/MacOS/flacpac-rusty")" = "$expected_arch"
+          test -x "$app/Contents/MacOS/flacpac-rusty"
           cp README.md Flacpac-README.md
           archive="flacpac-${VERSION}-macos-${ARCH}.zip"
           zip -qr "$archive" "$app" Flacpac-README.md
+          unzip -t "$archive"
           shasum -a 256 "$archive" > "${archive}.sha256"
 
       - name: Upload release artifacts
@@ -70,12 +91,15 @@ jobs:
             flacpac-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip
             flacpac-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip.sha256
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
   publish:
     name: Publish GitHub Release
-    needs: build
-    runs-on: macos-15
+    needs: [check, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
       - name: Download release artifacts
         uses: actions/download-artifact@v4
@@ -84,12 +108,21 @@ jobs:
           pattern: macos-*
           merge-multiple: true
 
+      - name: Verify release artifacts
+        working-directory: artifacts
+        run: |
+          test "$(find . -maxdepth 1 -name '*.zip' | wc -l)" -eq 2
+          test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 2
+          sha256sum --check ./*.sha256
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
           gh release create "$TAG" artifacts/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
             --title "Flacpac $TAG" \
             --generate-notes \
             --notes "macOS app bundles are unsigned and are not notarized. Gatekeeper may block the app until the user allows it in System Settings."
