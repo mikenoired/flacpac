@@ -72,6 +72,11 @@ pub struct AppView {
     pending_offsets: HashMap<String, f32>,
     _quit_subscription: Option<Subscription>,
     status: Option<String>,
+    status_details: bool,
+    library_error: Option<String>,
+    overlay_focus: HashMap<String, FocusHandle>,
+    active_overlay: Option<&'static str>,
+    return_focus: Option<FocusHandle>,
     scanning: bool,
     library_unavailable: bool,
     sort: SortMode,
@@ -121,7 +126,10 @@ impl AppView {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let saved = crate::settings::load();
         let search = cx.new(SearchInput::new);
-        search.update(cx, |input, _| input.light = saved.light);
+        search.update(cx, |input, _| {
+            input.light = saved.light;
+            input.palette = saved.palette;
+        });
         let subscription = cx.subscribe(&search, |this, _, event: &SearchChanged, cx| {
             this.set_search_query(event.0.clone(), cx);
         });
@@ -808,6 +816,9 @@ impl AppView {
     fn start_scan(&mut self, path: PathBuf, cx: &mut Context<Self>) {
         self.generation += 1;
         let generation = self.generation;
+        self.library_unavailable = false;
+        self.library_error = None;
+        self.status_details = false;
         self.status = Some("Loading saved library…".into());
         self.scanning = true;
         cx.notify();
@@ -845,6 +856,7 @@ impl AppView {
                 match result {
                     Ok((library, cache_result)) => {
                         view.library_unavailable = false;
+                        view.library_error = None;
                         let skipped=library.skipped_files;
                         view.prepare_tracks(library);
                         view.status = cache_result.err().map(|error| {
@@ -853,9 +865,8 @@ impl AppView {
                     }
                     Err(error) => {
                         view.library_unavailable = true;
-                        view.status = Some(format!(
-                            "Music folder unavailable; saved library retained. {error}"
-                        ));
+                        view.library_error = Some(error.to_string());
+                        view.status = None;
                     }
                 }
                 cx.notify();
@@ -920,6 +931,7 @@ impl AppView {
                         match result {
                             Ok((library, cache_result)) => {
                                 view.library_unavailable = false;
+                                view.library_error = None;
                                 let skipped=library.skipped_files;
                                 view.prepare_tracks(library);
                                 view.status = cache_result.err().map(|error| {
@@ -928,9 +940,8 @@ impl AppView {
                             }
                             Err(error) => {
                                 view.library_unavailable = true;
-                                view.status = Some(format!(
-                                    "Library update failed; saved library retained. {error}"
-                                ));
+                                view.library_error = Some(error.to_string());
+                                view.status = None;
                             }
                         }
                         cx.notify();
@@ -1000,9 +1011,11 @@ fn icon_button(
     enabled: bool,
     primary: bool,
     listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-) -> impl IntoElement {
+) -> Stateful<Div> {
+    let id = id.into();
     div()
-        .id(id.into())
+        .id(id.clone())
+        .debug_selector(move || id.clone())
         .role(Role::Button)
         .aria_label(title)
         .border_1()
@@ -1058,6 +1071,13 @@ fn icon_toggle_button(
         .id(id)
         .role(Role::Button)
         .aria_label(title)
+        .aria_toggled(if active {
+            Toggled::True
+        } else {
+            Toggled::False
+        })
+        .border_1()
+        .border_color(rgba(0x00000000))
         .size(px(32.))
         .flex_shrink_0()
         .flex()
@@ -1068,7 +1088,9 @@ fn icon_toggle_button(
         .bg(rgb(p.panel))
         .opacity(if enabled { 1. } else { 0.35 })
         .when(enabled, |el| {
-            el.cursor_pointer()
+            el.tab_index(0)
+                .focus_visible(move |s| s.border_color(rgb(p.accent)))
+                .cursor_pointer()
                 .hover(move |s| s.text_color(rgb(p.accent)))
                 .on_click(listener)
         })
@@ -1169,9 +1191,15 @@ fn reveal_track(path: &PathBuf) {
     };
     let _ = command.spawn();
 }
+struct SliderValue {
+    fraction: f32,
+    maximum: f32,
+    step: f32,
+}
+
 fn rail(
     id: &'static str,
-    value: f32,
+    value: SliderValue,
     enabled: bool,
     p: Palette,
     tooltip_text: Option<String>,
@@ -1179,21 +1207,57 @@ fn rail(
     callback: impl Fn(f32, &mut Window, &mut App) + 'static,
 ) -> impl IntoElement {
     use std::{cell::Cell, rc::Rc};
+    let SliderValue {
+        fraction: value,
+        maximum,
+        step,
+    } = value;
+    let fraction_step = if maximum > 0. { step / maximum } else { 0. };
     let bounds = Rc::new(Cell::new(Bounds::<Pixels>::default()));
     let painting = bounds.clone();
     let callback = Rc::new(callback);
     let click_callback = callback.clone();
     let click_dragging = dragging.clone();
     let is_dragging = dragging.get();
+    let key_callback = callback.clone();
     div()
         .id(id)
         .debug_selector(move || format!("rail-{id}"))
+        .role(Role::Slider)
+        .aria_label(if id == "seek" {
+            "Playback position"
+        } else {
+            "Volume"
+        })
+        .aria_min_numeric_value(0.)
+        .aria_max_numeric_value(maximum as f64)
+        .aria_numeric_value((value.clamp(0., 1.) * maximum) as f64)
+        .aria_numeric_value_step(step as f64)
+        .aria_orientation(Orientation::Horizontal)
+        .aria_value(
+            tooltip_text
+                .clone()
+                .unwrap_or_else(|| format!("{:.0}%", value * 100.)),
+        )
         .relative()
         .group(format!("rail-{id}"))
         .h(px(16.))
         .w_full()
         .when(enabled, |el| {
-            el.cursor_pointer()
+            el.tab_index(0)
+                .focus_visible(move |s| s.bg(rgb(p.raised)))
+                .on_key_down(move |event: &KeyDownEvent, window, cx| {
+                    let target = match event.keystroke.key.as_str() {
+                        "left" | "down" => value - fraction_step,
+                        "right" | "up" => value + fraction_step,
+                        "home" => 0.,
+                        "end" => 1.,
+                        _ => return,
+                    };
+                    key_callback(target.clamp(0., 1.), window, cx);
+                    cx.stop_propagation();
+                })
+                .cursor_pointer()
                 .on_mouse_down(MouseButton::Left, move |event, window, cx| {
                     let b = bounds.get();
                     click_dragging.set(true);
@@ -1335,6 +1399,161 @@ impl AppView {
             Page::ArtistDetail => format!("artist-{:?}", self.selected_artist),
         }
     }
+    fn overlay(&self) -> Option<&'static str> {
+        if self.artwork_modal.is_some() {
+            Some("artwork")
+        } else if self.settings_open {
+            Some("settings")
+        } else if self.statistics_open {
+            Some("statistics")
+        } else if self.menu_open {
+            Some("menu")
+        } else {
+            None
+        }
+    }
+
+    fn overlay_stops(&self) -> Vec<String> {
+        match self.overlay() {
+            Some("menu") => vec!["menu-statistics".into(), "menu-settings".into()],
+            Some("settings") => {
+                let mut stops = vec![
+                    "settings-tab-false".into(),
+                    "settings-tab-true".into(),
+                    "close-settings".into(),
+                ];
+                if !self.settings_about {
+                    stops.extend(["settings-mode-false".into(), "settings-mode-true".into()]);
+                    stops.extend(
+                        crate::settings::PALETTES
+                            .iter()
+                            .map(|p| format!("palette-{}", p.as_str())),
+                    );
+                }
+                stops
+            }
+            Some("statistics") => vec!["close-statistics".into()],
+            Some("artwork") => vec!["close-artwork".into()],
+            _ => vec![],
+        }
+    }
+
+    fn empty_content(&self) -> (&'static str, &'static str, Option<&'static str>) {
+        if self.page == Page::Queue {
+            return (
+                "Your queue is empty",
+                "Use a track’s menu to add it to the queue.",
+                None,
+            );
+        }
+        if self.tracks.is_empty() {
+            if self.scanning {
+                return (
+                    "Loading your library",
+                    "Indexing continues in the background.",
+                    None,
+                );
+            }
+            if self.library_unavailable {
+                return (
+                    "Music folder unavailable",
+                    "Reconnect the drive or choose another music folder.",
+                    Some("Choose folder"),
+                );
+            }
+            if self.root.is_none() {
+                return (
+                    "Your library starts here",
+                    "Choose a music folder to start listening.",
+                    Some("Choose folder"),
+                );
+            }
+        }
+        if !self.search_query.trim().is_empty() {
+            return (
+                "No results",
+                "Try another title, artist or album.",
+                Some("Clear search"),
+            );
+        }
+        (
+            "No music found",
+            "Choose a folder containing supported audio files.",
+            Some("Choose folder"),
+        )
+    }
+
+    fn status_banner(&self, p: Palette, cx: &mut Context<Self>) -> Div {
+        div()
+            .debug_selector(|| "status-banner".into())
+            .px_6()
+            .py_2()
+            .flex()
+            .flex_col()
+            .gap_2()
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_3()
+                    .child(div().flex_1().min_w_0().text_size(px(12.)).child(
+                        if self.library_unavailable {
+                            if self.tracks.is_empty() {
+                                "Music folder unavailable.".into()
+                            } else {
+                                "Music folder unavailable. Saved library retained.".into()
+                            }
+                        } else {
+                            self.status.clone().unwrap_or_default()
+                        },
+                    ))
+                    .when(self.library_unavailable, |el| {
+                        el.child(text_button(
+                            "recover-folder",
+                            "folder",
+                            "Choose folder",
+                            p,
+                            false,
+                            cx.listener(|this, _, _, cx| this.choose_folder(cx)),
+                        ))
+                    })
+                    .when(
+                        self.library_unavailable && self.library_error.is_some(),
+                        |el| {
+                            el.child(text_button(
+                                "status-details",
+                                "menu",
+                                if self.status_details {
+                                    "Hide details"
+                                } else {
+                                    "Details"
+                                },
+                                p,
+                                false,
+                                cx.listener(|this, _, _, cx| {
+                                    this.status_details = !this.status_details;
+                                    cx.notify();
+                                }),
+                            ))
+                        },
+                    ),
+            )
+            .when(self.library_unavailable && self.status_details, |el| {
+                el.child(
+                    div()
+                        .text_size(px(11.))
+                        .text_color(rgb(p.muted))
+                        .child(self.library_error.clone().unwrap_or_default()),
+                )
+            })
+            .when(self.library_unavailable && self.status.is_some(), |el| {
+                el.child(
+                    div()
+                        .text_size(px(12.))
+                        .child(self.status.clone().unwrap_or_default()),
+                )
+            })
+    }
     fn key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         let key = &event.keystroke;
         if key.key == "escape"
@@ -1351,6 +1570,25 @@ impl AppView {
             self.context_track = None;
             cx.notify();
             cx.stop_propagation();
+            return;
+        }
+        if self.overlay().is_some() {
+            if key.key == "tab" {
+                let stops = self.overlay_stops();
+                if !stops.is_empty() {
+                    let current = stops
+                        .iter()
+                        .position(|id| self.overlay_focus[id].is_focused(window));
+                    let index = match current {
+                        Some(i) if key.modifiers.shift => (i + stops.len() - 1) % stops.len(),
+                        Some(i) => (i + 1) % stops.len(),
+                        None if key.modifiers.shift => stops.len() - 1,
+                        None => 0,
+                    };
+                    window.focus(&self.overlay_focus[&stops[index]], cx);
+                }
+                cx.stop_propagation();
+            }
             return;
         }
         if self.context_track.take().is_some() {
@@ -1799,10 +2037,14 @@ impl AppView {
                             )
                             .child(div().flex_1().child(rail(
                                 "seek",
-                                if total > 0 {
-                                    self.position_ms as f32 / total as f32
-                                } else {
-                                    0.
+                                SliderValue {
+                                    fraction: if total > 0 {
+                                        self.position_ms as f32 / total as f32
+                                    } else {
+                                        0.
+                                    },
+                                    maximum: total as f32 / 1000.,
+                                    step: 5.,
                                 },
                                 total > 0,
                                 p,
@@ -1837,7 +2079,11 @@ impl AppView {
                     .child(icon("volume", 16., p.muted))
                     .child(div().w(px(80.)).child(rail(
                         "volume",
-                        self.volume,
+                        SliderValue {
+                            fraction: self.volume,
+                            maximum: 100.,
+                            step: 5.,
+                        },
                         true,
                         p,
                         None,
@@ -1891,6 +2137,27 @@ impl Render for AppView {
             (window.viewport_size().height - px(200.)).max(px(8.)),
         );
 
+        self.overlay_focus
+            .entry("app-menu".into())
+            .or_insert_with(|| cx.focus_handle());
+        let overlay = self.overlay();
+        let stops = self.overlay_stops();
+        for id in &stops {
+            self.overlay_focus
+                .entry(id.clone())
+                .or_insert_with(|| cx.focus_handle());
+        }
+        if overlay != self.active_overlay {
+            if self.active_overlay.is_none() && overlay.is_some() {
+                self.return_focus = window.focused(cx);
+            }
+            if let Some(first) = stops.first() {
+                window.focus(&self.overlay_focus[first], cx);
+            } else if let Some(focus) = self.return_focus.take() {
+                window.focus(&focus, cx);
+            }
+            self.active_overlay = overlay;
+        }
         if window.focused(cx).is_none()
             && let Some(focus) = &self.root_focus
         {
@@ -2053,8 +2320,8 @@ impl Render for AppView {
                     .flex()
                     .flex_col()
                     .child(self.header(p, cx))
-                    .when_some(self.status.clone(), |el, status| {
-                        el.child(div().px_6().py_2().text_size(px(11.)).child(status))
+                    .when(self.library_unavailable || self.status.is_some(), |el| {
+                        el.child(self.status_banner(p, cx))
                     })
                     .child(self.library_content(rows, count, p, cx)),
             )
@@ -2095,7 +2362,7 @@ impl Render for AppView {
             })
     }
 }
-fn empty_state(title: &'static str, description: &'static str, p: Palette) -> impl IntoElement {
+fn empty_state(title: &'static str, description: &'static str, p: Palette) -> Div {
     div()
         .size_full()
         .flex()
@@ -3123,18 +3390,14 @@ impl AppView {
                     .gap_2()
                     .group("sidebar-logo")
                     .child(
-                        div()
-                            .when(collapsed, |el| {
-                                el.group_hover("sidebar-logo", |s| s.opacity(0.))
-                            })
-                            .child(
-                                svg()
-                                    .path("brand")
-                                    .w(px(36.))
-                                    .h(px(34.))
-                                    .flex_shrink_0()
-                                    .text_color(rgb(p.text)),
-                            ),
+                        div().when(collapsed, |el| el.opacity(0.)).child(
+                            svg()
+                                .path("brand")
+                                .w(px(36.))
+                                .h(px(34.))
+                                .flex_shrink_0()
+                                .text_color(rgb(p.text)),
+                        ),
                     )
                     .when(!collapsed, |el| {
                         el.child(
@@ -3145,43 +3408,30 @@ impl AppView {
                         )
                     })
                     .when(collapsed, |el| {
-                        el.child(
-                            div()
-                                .absolute()
-                                .left(px(4.))
-                                .top(px(5.))
-                                .opacity(0.)
-                                .group_hover("sidebar-logo", |s| s.opacity(1.))
-                                .child(icon_button(
-                                    "expand-sidebar",
-                                    "expand",
-                                    "Expand sidebar",
-                                    p,
-                                    true,
-                                    false,
-                                    cx.listener(|this, _, _, cx| {
-                                        this.toggle_sidebar(cx);
-                                    }),
-                                )),
-                        )
+                        el.child(div().absolute().left(px(4.)).top(px(5.)).child(icon_button(
+                            "expand-sidebar",
+                            "expand",
+                            "Expand sidebar",
+                            p,
+                            true,
+                            false,
+                            cx.listener(|this, _, _, cx| {
+                                this.toggle_sidebar(cx);
+                            }),
+                        )))
                     })
                     .when(!collapsed, |el| {
-                        el.child(
-                            div()
-                                .opacity(0.)
-                                .group_hover("sidebar", |s| s.opacity(1.))
-                                .child(icon_button(
-                                    "collapse-sidebar",
-                                    "collapse",
-                                    "Collapse sidebar",
-                                    p,
-                                    true,
-                                    false,
-                                    cx.listener(|this, _, _, cx| {
-                                        this.toggle_sidebar(cx);
-                                    }),
-                                )),
-                        )
+                        el.child(div().child(icon_button(
+                            "collapse-sidebar",
+                            "collapse",
+                            "Collapse sidebar",
+                            p,
+                            true,
+                            false,
+                            cx.listener(|this, _, _, cx| {
+                                this.toggle_sidebar(cx);
+                            }),
+                        )))
                     }),
             )
             .children(nav.into_iter().map(|(target, name, title)| {
@@ -3306,18 +3556,21 @@ impl AppView {
                         false,
                         cx.listener(|this, _, _, cx| this.choose_folder(cx)),
                     ))
-                    .child(icon_button(
-                        "app-menu",
-                        "menu",
-                        "Application menu",
-                        p,
-                        true,
-                        self.menu_open,
-                        cx.listener(|this, _, _, cx| {
-                            this.menu_open = !this.menu_open;
-                            cx.notify();
-                        }),
-                    )),
+                    .child(
+                        icon_button(
+                            "app-menu",
+                            "menu",
+                            "Application menu",
+                            p,
+                            true,
+                            self.menu_open,
+                            cx.listener(|this, _, _, cx| {
+                                this.menu_open = !this.menu_open;
+                                cx.notify();
+                            }),
+                        )
+                        .track_focus(&self.overlay_focus["app-menu"]),
+                    ),
             )
     }
     fn toolbar(&self, count: usize, p: Palette, cx: &mut Context<Self>) -> Div {
@@ -3402,27 +3655,7 @@ impl AppView {
         cx: &mut Context<Self>,
     ) -> Div {
         let detail = matches!(self.page, Page::AlbumDetail | Page::ArtistDetail);
-        let (empty_title, empty_description) =
-            if !self.search_query.trim().is_empty() && self.page != Page::Queue {
-                ("No results", "Try another title, artist or album.")
-            } else if self.scanning {
-                (
-                    "Loading your library",
-                    "Saved music will appear first. Indexing continues in the background.",
-                )
-            } else if self.library_unavailable {
-                (
-                    "Music folder unavailable",
-                    "Reconnect the drive or choose another music folder.",
-                )
-            } else if self.page == Page::Queue {
-                ("Your queue is empty", "Play an album to start listening.")
-            } else {
-                (
-                    "Your library starts here",
-                    "Choose a music folder to start listening.",
-                )
-            };
+        let (empty_title, empty_description, action) = self.empty_content();
         div()
             .flex_1()
             .min_h_0()
@@ -3441,7 +3674,39 @@ impl AppView {
                     .min_h_0()
                     .when(count > 0, |el| el.child(rows))
                     .when(count == 0, |el| {
-                        el.child(empty_state(empty_title, empty_description, p))
+                        el.child(
+                            div()
+                                .size_full()
+                                .flex()
+                                .flex_col()
+                                .items_center()
+                                .justify_center()
+                                .gap_3()
+                                .child(empty_state(empty_title, empty_description, p).size_auto())
+                                .when_some(action, |el, action| {
+                                    el.child(text_button(
+                                        "empty-action",
+                                        if action == "Clear search" {
+                                            "close"
+                                        } else {
+                                            "folder"
+                                        },
+                                        action,
+                                        p,
+                                        true,
+                                        cx.listener(move |this, _, _, cx| {
+                                            if action == "Clear search" {
+                                                if let Some(search) = &this.search {
+                                                    search
+                                                        .update(cx, |search, cx| search.clear(cx));
+                                                }
+                                            } else {
+                                                this.choose_folder(cx);
+                                            }
+                                        }),
+                                    ))
+                                }),
+                        )
                     }),
             )
     }
@@ -3524,6 +3789,12 @@ mod layout_tests {
 impl AppView {
     fn application_menu(&self, p: Palette, cx: &mut Context<Self>) -> AnyElement {
         div()
+            .id("application-menu")
+            .on_mouse_down_out(cx.listener(|this, _, _, cx| {
+                this.menu_open = false;
+                cx.notify();
+                cx.stop_propagation();
+            }))
             .absolute()
             .top(px(58.))
             .right(px(24.))
@@ -3545,6 +3816,10 @@ impl AppView {
             .child(
                 div()
                     .id("menu-statistics")
+                    .track_focus(&self.overlay_focus["menu-statistics"])
+                    .tab_index(0)
+                    .role(Role::Button)
+                    .focus_visible(move |s| s.bg(rgb(p.accent_bg)))
                     .px_3()
                     .py_3()
                     .rounded_md()
@@ -3567,6 +3842,10 @@ impl AppView {
             .child(
                 div()
                     .id("menu-settings")
+                    .track_focus(&self.overlay_focus["menu-settings"])
+                    .tab_index(0)
+                    .role(Role::Button)
+                    .focus_visible(move |s| s.bg(rgb(p.accent_bg)))
                     .px_3()
                     .py_3()
                     .rounded_md()
@@ -3594,6 +3873,7 @@ impl AppView {
             .id("settings-modal")
             .absolute()
             .inset_0()
+            .occlude()
             .bg(rgba(0x000000bb))
             .flex()
             .items_center()
@@ -3627,6 +3907,13 @@ impl AppView {
                                 |(tab, title)| {
                                     div()
                                         .id(format!("settings-tab-{tab}"))
+                                        .aria_selected(about == tab)
+                                        .track_focus(
+                                            &self.overlay_focus[&format!("settings-tab-{tab}")],
+                                        )
+                                        .tab_index(0)
+                                        .role(Role::Button)
+                                        .focus_visible(move |s| s.bg(rgb(p.raised)))
                                         .p_3()
                                         .mb_1()
                                         .rounded_md()
@@ -3658,18 +3945,21 @@ impl AppView {
                                             .font_weight(FontWeight::SEMIBOLD)
                                             .child(if about { "About" } else { "Appearance" }),
                                     )
-                                    .child(icon_button(
-                                        "close-settings",
-                                        "close",
-                                        "Close settings",
-                                        p,
-                                        true,
-                                        false,
-                                        cx.listener(|this, _, _, cx| {
-                                            this.settings_open = false;
-                                            cx.notify();
-                                        }),
-                                    )),
+                                    .child(
+                                        icon_button(
+                                            "close-settings",
+                                            "close",
+                                            "Close settings",
+                                            p,
+                                            true,
+                                            false,
+                                            cx.listener(|this, _, _, cx| {
+                                                this.settings_open = false;
+                                                cx.notify();
+                                            }),
+                                        )
+                                        .track_focus(&self.overlay_focus["close-settings"]),
+                                    ),
                             )
                             .when(about, |el| {
                                 el.child(
@@ -3709,6 +3999,18 @@ impl AppView {
                                             |(light, title)| {
                                                 div()
                                                     .id(format!("settings-mode-{light}"))
+                                                    .aria_toggled(if self.light == light {
+                                                        Toggled::True
+                                                    } else {
+                                                        Toggled::False
+                                                    })
+                                                    .track_focus(
+                                                        &self.overlay_focus
+                                                            [&format!("settings-mode-{light}")],
+                                                    )
+                                                    .tab_index(0)
+                                                    .role(Role::Button)
+                                                    .focus_visible(move |s| s.bg(rgb(p.raised)))
                                                     .flex_1()
                                                     .p_2()
                                                     .rounded_md()
@@ -3742,6 +4044,18 @@ impl AppView {
                                             let current = self.palette == name;
                                             div()
                                                 .id(format!("palette-{}", name.as_str()))
+                                                .aria_toggled(if current {
+                                                    Toggled::True
+                                                } else {
+                                                    Toggled::False
+                                                })
+                                                .track_focus(
+                                                    &self.overlay_focus
+                                                        [&format!("palette-{}", name.as_str())],
+                                                )
+                                                .tab_index(0)
+                                                .role(Role::Button)
+                                                .focus_visible(move |s| s.bg(rgb(p.raised)))
                                                 .flex()
                                                 .items_center()
                                                 .gap_3()
@@ -3757,6 +4071,12 @@ impl AppView {
                                                 .hover(move |s| s.bg(rgb(p.raised)))
                                                 .on_click(cx.listener(move |this, _, _, cx| {
                                                     this.palette = name;
+                                                    if let Some(search) = &this.search {
+                                                        search.update(cx, |search, cx| {
+                                                            search.palette = name;
+                                                            cx.notify();
+                                                        });
+                                                    }
                                                     this.persist();
                                                     cx.notify();
                                                 }))
@@ -3971,7 +4291,23 @@ impl AppView {
                 )
             })
             .child(div().w_full().px_3().py_2().child(label("Up next", p)))
-            .child(div().w_full().flex_1().min_h_0().child(list))
+            .child(
+                div()
+                    .w_full()
+                    .flex_1()
+                    .min_h_0()
+                    .when(count > 0, |el| el.child(list))
+                    .when(count == 0, |el| {
+                        el.child(
+                            div().px_4().py_4().child("Nothing queued").child(
+                                div()
+                                    .mt_2()
+                                    .text_color(rgb(p.muted))
+                                    .child("Use a track’s menu to add it to the queue."),
+                            ),
+                        )
+                    }),
+            )
             .into_any_element()
     }
 
@@ -3989,6 +4325,7 @@ impl AppView {
         div()
             .absolute()
             .inset_0()
+            .occlude()
             .bg(rgba(0x000000dd))
             .flex()
             .flex_col()
@@ -4003,18 +4340,23 @@ impl AppView {
                     cx.notify();
                 }),
             )
-            .child(div().w(px(side)).flex().justify_end().child(icon_button(
-                "close-artwork",
-                "close",
-                "Close artwork",
-                p,
-                true,
-                false,
-                cx.listener(|this, _, _, cx| {
-                    this.artwork_modal = None;
-                    cx.notify();
-                }),
-            )))
+            .child(
+                div().w(px(side)).flex().justify_end().child(
+                    icon_button(
+                        "close-artwork",
+                        "close",
+                        "Close artwork",
+                        p,
+                        true,
+                        false,
+                        cx.listener(|this, _, _, cx| {
+                            this.artwork_modal = None;
+                            cx.notify();
+                        }),
+                    )
+                    .track_focus(&self.overlay_focus["close-artwork"]),
+                ),
+            )
             .child(
                 div()
                     .debug_selector(|| "expanded-artwork".into())
@@ -4032,6 +4374,7 @@ impl AppView {
         div()
             .absolute()
             .inset_0()
+            .occlude()
             .bg(rgba(0x000000bb))
             .flex()
             .items_center()
@@ -4054,18 +4397,21 @@ impl AppView {
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .child("Listening statistics"),
                             )
-                            .child(icon_button(
-                                "close-statistics",
-                                "close",
-                                "Close statistics",
-                                p,
-                                true,
-                                false,
-                                cx.listener(|this, _, _, cx| {
-                                    this.statistics_open = false;
-                                    cx.notify();
-                                }),
-                            )),
+                            .child(
+                                icon_button(
+                                    "close-statistics",
+                                    "close",
+                                    "Close statistics",
+                                    p,
+                                    true,
+                                    false,
+                                    cx.listener(|this, _, _, cx| {
+                                        this.statistics_open = false;
+                                        cx.notify();
+                                    }),
+                                )
+                                .track_focus(&self.overlay_focus["close-statistics"]),
+                            ),
                     )
                     .child(self.statistics_content(p)),
             )
@@ -4231,7 +4577,11 @@ mod interaction_regressions {
             let view = cx.weak_entity();
             div().w(px(300.)).h(px(100.)).p_5().child(rail(
                 "seek",
-                self.value,
+                super::SliderValue {
+                    fraction: self.value,
+                    maximum: 100.,
+                    step: 5.,
+                },
                 true,
                 Palette::from_name(crate::settings::PaletteName::Forest, false),
                 Some(duration((self.value * 100_000.) as u64)),
@@ -4435,5 +4785,268 @@ mod interaction_regressions {
             .map(|track| track.path)
             .collect();
         assert_eq!(actual, [4, 0, 2, 3].map(|i| tracks[i].path.clone()));
+    }
+}
+
+#[cfg(test)]
+mod design_regressions {
+    use super::{AppView, Page, Palette, SliderValue, Track, rail};
+    use gpui::{
+        AppContext, Context, FocusHandle, IntoElement, Modifiers, MouseButton, Render,
+        TestAppContext, Window, div, point, prelude::*, px,
+    };
+    use std::sync::Arc;
+
+    #[::core::prelude::v1::test]
+    fn empty_source_and_empty_search_results_offer_the_right_action() {
+        let mut view = AppView {
+            search_query: "missing".into(),
+            ..AppView::default()
+        };
+        assert_eq!(view.empty_content().2, Some("Choose folder"));
+        view.scanning = true;
+        assert_eq!(view.empty_content().0, "Loading your library");
+        assert_eq!(view.empty_content().2, None);
+        view.scanning = false;
+        view.library_unavailable = true;
+        assert_eq!(view.empty_content().0, "Music folder unavailable");
+        view.tracks = Arc::new(vec![Track::default()]);
+        assert_eq!(view.empty_content().0, "No results");
+        assert_eq!(view.empty_content().2, Some("Clear search"));
+        view.page = Page::Queue;
+        assert_eq!(view.empty_content().0, "Your queue is empty");
+    }
+
+    #[gpui::test]
+    fn keyboard_opens_settings_traps_focus_and_returns_to_the_opener(cx: &mut TestAppContext) {
+        let (view, cx) = cx.add_window_view(|_, cx| AppView {
+            root_focus: Some(cx.focus_handle()),
+            search: Some(cx.new(crate::search::SearchInput::new)),
+            ..AppView::default()
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            let focus = view.read(cx).overlay_focus["app-menu"].clone();
+            window.focus(&focus, cx);
+        });
+        cx.run_until_parked();
+        cx.simulate_keystrokes("enter");
+        cx.simulate_event(gpui::KeyUpEvent {
+            keystroke: gpui::Keystroke::parse("enter").unwrap(),
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            assert!(view.read(cx).overlay_focus["menu-statistics"].is_focused(window))
+        });
+        cx.simulate_keystrokes("tab");
+        cx.run_until_parked();
+        cx.simulate_keystrokes("enter");
+        cx.simulate_event(gpui::KeyUpEvent {
+            keystroke: gpui::Keystroke::parse("enter").unwrap(),
+        });
+        cx.run_until_parked();
+        cx.read_entity(&view, |view, _| assert!(view.settings_open));
+        let behind = cx.debug_bounds("search-field").unwrap().center();
+        cx.simulate_click(behind, Modifiers::default());
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            assert!(
+                !view
+                    .read(cx)
+                    .search
+                    .as_ref()
+                    .unwrap()
+                    .read(cx)
+                    .focus
+                    .is_focused(window)
+            )
+        });
+        for _ in 0..20 {
+            cx.simulate_keystrokes("tab");
+            cx.run_until_parked();
+            cx.update(|window, cx| {
+                let state = view.read(cx);
+                assert!(
+                    state
+                        .overlay_stops()
+                        .iter()
+                        .any(|id| state.overlay_focus[id].is_focused(window))
+                );
+            });
+        }
+        cx.simulate_keystrokes("shift-tab");
+        cx.update(|window, cx| {
+            let focus = view.read(cx).overlay_focus["settings-tab-true"].clone();
+            window.focus(&focus, cx);
+        });
+        cx.run_until_parked();
+        cx.simulate_keystrokes("enter");
+        cx.simulate_event(gpui::KeyUpEvent {
+            keystroke: gpui::Keystroke::parse("enter").unwrap(),
+        });
+        cx.run_until_parked();
+        cx.read_entity(&view, |view, _| assert!(view.settings_about));
+        for _ in 0..5 {
+            cx.simulate_keystrokes("tab");
+            cx.run_until_parked();
+        }
+        cx.update(|window, cx| {
+            let state = view.read(cx);
+            assert!(
+                state
+                    .overlay_stops()
+                    .iter()
+                    .any(|id| state.overlay_focus[id].is_focused(window))
+            );
+        });
+        cx.simulate_keystrokes("escape");
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            assert!(!view.read(cx).settings_open);
+            assert!(view.read(cx).overlay_focus["app-menu"].is_focused(window));
+        });
+    }
+
+    #[gpui::test]
+    fn menu_outside_click_dismisses_without_reopening(cx: &mut TestAppContext) {
+        let (view, cx) = cx.add_window_view(|_, cx| AppView {
+            root_focus: Some(cx.focus_handle()),
+            ..AppView::default()
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            let focus = view.read(cx).overlay_focus["app-menu"].clone();
+            window.focus(&focus, cx);
+        });
+        cx.run_until_parked();
+        cx.simulate_keystrokes("enter");
+        cx.simulate_event(gpui::KeyUpEvent {
+            keystroke: gpui::Keystroke::parse("enter").unwrap(),
+        });
+        cx.run_until_parked();
+        cx.read_entity(&view, |view, _| assert!(view.menu_open));
+        cx.simulate_mouse_down(
+            point(px(10.), px(300.)),
+            MouseButton::Left,
+            Modifiers::default(),
+        );
+        cx.simulate_mouse_up(
+            point(px(10.), px(300.)),
+            MouseButton::Left,
+            Modifiers::default(),
+        );
+        cx.run_until_parked();
+        cx.read_entity(&view, |view, _| assert!(!view.menu_open));
+        cx.simulate_keystrokes("enter");
+        cx.simulate_event(gpui::KeyUpEvent {
+            keystroke: gpui::Keystroke::parse("enter").unwrap(),
+        });
+        cx.run_until_parked();
+        cx.read_entity(&view, |view, _| assert!(view.menu_open));
+        let opener = cx.debug_bounds("app-menu").unwrap().center();
+        cx.simulate_click(opener, Modifiers::default());
+        cx.run_until_parked();
+        cx.read_entity(&view, |view, _| assert!(!view.menu_open));
+    }
+
+    #[derive(Default)]
+    struct SliderHarness {
+        value: f32,
+        enabled: bool,
+        root: Option<FocusHandle>,
+        bubbled: usize,
+    }
+    impl Render for SliderHarness {
+        fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+            let target = cx.weak_entity();
+            div()
+                .tab_group()
+                .when_some(self.root.as_ref(), |el, focus| el.track_focus(focus))
+                .on_key_down(cx.listener(|this, _, _, _| this.bubbled += 1))
+                .w(px(300.))
+                .h(px(100.))
+                .child(rail(
+                    "volume",
+                    SliderValue {
+                        fraction: self.value,
+                        maximum: 100.,
+                        step: 5.,
+                    },
+                    self.enabled,
+                    Palette::from_name(Default::default(), false),
+                    None,
+                    Default::default(),
+                    move |value, _, cx| {
+                        let _ = target.update(cx, |this, cx| {
+                            this.value = value;
+                            cx.notify();
+                        });
+                    },
+                ))
+        }
+    }
+
+    #[gpui::test]
+    fn slider_keyboard_steps_clamps_and_stops_arrow_propagation(cx: &mut TestAppContext) {
+        let (view, cx) = cx.add_window_view(|_, cx| SliderHarness {
+            value: 0.5,
+            enabled: true,
+            root: Some(cx.focus_handle()),
+            ..Default::default()
+        });
+        cx.run_until_parked();
+        cx.update(|window, cx| {
+            let focus = view.read(cx).root.as_ref().unwrap().clone();
+            window.focus(&focus, cx);
+            window.focus_next(cx);
+        });
+        cx.simulate_keystrokes("right");
+        cx.read_entity(&view, |view, _| {
+            assert!((view.value - 0.55).abs() < 0.001);
+            assert_eq!(view.bubbled, 0);
+        });
+        cx.simulate_keystrokes("end right");
+        cx.read_entity(&view, |view, _| assert_eq!(view.value, 1.));
+        cx.simulate_keystrokes("home left");
+        cx.read_entity(&view, |view, _| assert_eq!(view.value, 0.));
+        cx.update(|_, cx| {
+            view.update(cx, |view, cx| {
+                view.enabled = false;
+                cx.notify();
+            })
+        });
+        cx.run_until_parked();
+        cx.simulate_keystrokes("right");
+        cx.read_entity(&view, |view, _| assert_eq!(view.value, 0.));
+    }
+    #[gpui::test]
+    fn compact_window_contains_search_recovery_banner_and_open_queue(cx: &mut TestAppContext) {
+        let (view, cx) = cx.add_window_view(|_, cx| AppView {
+            search: Some(cx.new(crate::search::SearchInput::new)),
+            root_focus: Some(cx.focus_handle()),
+            queue_sidebar_open: true,
+            sidebar_width: 184.,
+            library_unavailable: true,
+            library_error: Some("A long technical error kept in details".into()),
+            ..Default::default()
+        });
+        cx.simulate_resize(gpui::size(px(960.), px(640.)));
+        for light in [false, true] {
+            cx.update(|_, cx| {
+                view.update(cx, |view, cx| {
+                    view.light = light;
+                    cx.notify();
+                })
+            });
+            cx.run_until_parked();
+            let header = cx.debug_bounds("app-header").unwrap();
+            let search = cx.debug_bounds("search-field").unwrap();
+            let banner = cx.debug_bounds("status-banner").unwrap();
+            let queue = cx.debug_bounds("queue-sidebar").unwrap();
+            assert!(search.left() >= header.left() && search.right() <= header.right());
+            assert!(banner.left() >= header.left() && banner.right() <= queue.left());
+            assert!(banner.bottom() < cx.debug_bounds("player-bar").unwrap().top());
+            assert!(queue.right() <= px(960.));
+        }
     }
 }

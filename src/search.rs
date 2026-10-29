@@ -6,6 +6,7 @@ pub struct SearchChanged(pub String);
 pub struct SearchInput {
     pub focus: FocusHandle,
     pub light: bool,
+    pub palette: crate::settings::PaletteName,
     text: String,
     anchor: usize,
     cursor: usize,
@@ -21,6 +22,7 @@ impl SearchInput {
         Self {
             focus: cx.focus_handle(),
             light: false,
+            palette: Default::default(),
             text: String::new(),
             anchor: 0,
             cursor: 0,
@@ -264,12 +266,11 @@ impl Render for SearchInput {
         let focused = self.focus.is_focused(window);
         let entity = cx.entity();
         let paint_entity = entity.clone();
+        let palette = self.palette.definition(self.light);
         let border = if focused {
-            0x92b55f
-        } else if self.light {
-            0xd9dfd2
+            palette.accent
         } else {
-            0x30372e
+            palette.line
         };
         div()
             .id("search-input")
@@ -288,7 +289,8 @@ impl Render for SearchInput {
             .rounded_md()
             .border_1()
             .border_color(rgb(border))
-            .bg(rgb(if self.light { 0xffffff } else { 0x1b201a }))
+            .bg(rgb(palette.panel))
+            .text_color(rgb(palette.text))
             .on_key_down(cx.listener(Self::key))
             .on_mouse_down(
                 MouseButton::Left,
@@ -317,7 +319,12 @@ impl Render for SearchInput {
                 MouseButton::Left,
                 cx.listener(|this, _, _, _| this.dragging = false),
             )
-            .child(svg().path("search").size(px(16.)).text_color(rgb(0x899281)))
+            .child(
+                svg()
+                    .path("search")
+                    .size(px(16.))
+                    .text_color(rgb(palette.muted)),
+            )
             .child(
                 div().flex_1().min_w_0().overflow_hidden().child(
                     canvas(
@@ -331,7 +338,7 @@ impl Render for SearchInput {
                                     this.text.clone().into()
                                 };
                                 let color = if placeholder {
-                                    hsla(0.25, 0.05, 0.55, 1.)
+                                    rgb_to_hsla(rgb(palette.muted))
                                 } else {
                                     style.color
                                 };
@@ -392,7 +399,7 @@ impl Render for SearchInput {
                                                 bounds.size.height,
                                             ),
                                         ),
-                                        rgba(0x8bb25255),
+                                        rgba((palette.accent << 8) | 0x55),
                                     ));
                                 }
                                 let _ = line.paint(
@@ -430,7 +437,12 @@ impl Render for SearchInput {
                         .id("clear-search")
                         .cursor_pointer()
                         .on_click(cx.listener(|this, _, _, cx| this.clear(cx)))
-                        .child(svg().path("close").size(px(14.)).text_color(rgb(0x899281))),
+                        .child(
+                            svg()
+                                .path("close")
+                                .size(px(14.))
+                                .text_color(rgb(palette.muted)),
+                        ),
                 )
             })
     }
