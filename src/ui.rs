@@ -2545,6 +2545,7 @@ impl AppView {
                     .items_center()
                     .justify_end()
                     .gap_1()
+                    .pr_2()
                     .cursor_pointer()
                     .text_color(rgb(if self.sort == SortMode::Duration {
                         p.accent
@@ -2778,10 +2779,10 @@ fn track_row(
                         .min_w_0()
                         .flex()
                         .flex_col()
-                        .gap_1()
+                        .gap_0p5()
                         .child(
                             div()
-                                .text_size(px(12.))
+                                .text_size(px(14.))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(rgb(if is_current { p.accent } else { p.text }))
                                 .truncate()
@@ -2790,7 +2791,7 @@ fn track_row(
                         .child(
                             div()
                                 .id(format!("artist-link-{index}"))
-                                .text_size(px(11.))
+                                .text_size(px(12.))
                                 .text_color(rgb(p.muted))
                                 .cursor_pointer()
                                 .hover(move |s| s.text_color(rgb(p.accent)))
@@ -2801,7 +2802,7 @@ fn track_row(
                                         this.open_artist(artist.clone(), cx)
                                     });
                                 })
-                                .child(track.artist.replace(';', " ·")),
+                                .child(track.artist.replace(';', ",")),
                         ),
                 ),
         )
@@ -2812,7 +2813,7 @@ fn track_row(
                     .w(px(widths[1]))
                     .flex_shrink_0()
                     .px_2()
-                    .text_size(px(11.))
+                    .text_size(px(12.))
                     .text_color(rgb(p.muted))
                     .cursor_pointer()
                     .hover(move |s| s.text_color(rgb(p.accent)))
@@ -3474,32 +3475,30 @@ impl AppView {
                     .tooltip(move |_, cx| cx.new(|_| Tip(title.into(), p)).into())
             }))
             .child(
-                div()
-                    .mt_auto()
-                    .flex()
-                    .flex_col()
-                    .gap_2()
-                    .when(!collapsed, |el| {
-                        el.child(text_button(
-                            "library-folder",
-                            "folder",
-                            "Music folder",
-                            p,
-                            false,
-                            cx.listener(|this, _, _, cx| this.choose_folder(cx)),
-                        ))
-                    })
-                    .when(collapsed, |el| {
-                        el.child(icon_button(
-                            "library-folder",
-                            "folder",
-                            "Music folder",
-                            p,
-                            true,
-                            false,
-                            cx.listener(|this, _, _, cx| this.choose_folder(cx)),
-                        ))
-                    }),
+                div().mt_auto().flex().flex_col().gap_2().child(
+                    div()
+                        .id("library-folder")
+                        .tab_index(0)
+                        .role(Role::Button)
+                        .aria_label("Music folder")
+                        .focus_visible(move |style| style.bg(rgb(p.raised)))
+                        .h(px(38.))
+                        .px_3()
+                        .mb_1()
+                        .rounded_md()
+                        .flex()
+                        .items_center()
+                        .gap_3()
+                        .cursor_pointer()
+                        .bg(rgb(p.panel))
+                        .text_color(rgb(p.muted))
+                        .text_size(px(13.))
+                        .hover(move |style| style.bg(rgb(p.raised)).text_color(rgb(p.text)))
+                        .on_click(cx.listener(|this, _, _, cx| this.choose_folder(cx)))
+                        .child(icon("folder", 17., p.muted))
+                        .when(!collapsed, |el| el.child("Music folder"))
+                        .tooltip(move |_, cx| cx.new(|_| Tip("Music folder".into(), p)).into()),
+                ),
             )
     }
     fn header(&self, p: Palette, cx: &mut Context<Self>) -> Div {
