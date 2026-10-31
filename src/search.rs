@@ -267,11 +267,7 @@ impl Render for SearchInput {
         let entity = cx.entity();
         let paint_entity = entity.clone();
         let palette = self.palette.definition(self.light);
-        let border = if focused {
-            palette.accent
-        } else {
-            palette.line
-        };
+        let border = if focused { palette.line } else { palette.bg };
         div()
             .id("search-input")
             .debug_selector(|| "search-field".into())

@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 
+use crate::components::{icon_button, text_button};
 use crate::library::{Album, Artist, Library, Track, album_artist, build_catalog};
 use crate::media_controls::SystemMediaControls;
 use crate::playback::{Playback, RepeatMode};
@@ -17,86 +18,86 @@ type TrackMenuAction = Box<dyn Fn(&mut AppView, &Track, &mut Context<AppView>) +
 
 #[derive(Default)]
 pub struct AppView {
-    statistics: crate::statistics::Statistics,
-    statistics_tick: Option<std::time::Instant>,
-    artwork_modal: Option<PathBuf>,
-    menu_open: bool,
-    statistics_open: bool,
-    settings_open: bool,
-    settings_about: bool,
-    sidebar_collapsed: bool,
-    sidebar_width: f32,
-    sidebar_animation: Option<Task<()>>,
-    _activation_subscription: Option<Subscription>,
-    queue_sidebar_open: bool,
-    context_track: Option<Track>,
-    context_menu_position: Point<Pixels>,
-    seek_dragging: std::rc::Rc<std::cell::Cell<bool>>,
-    volume_dragging: std::rc::Rc<std::cell::Cell<bool>>,
-    root: Option<PathBuf>,
-    tracks: Arc<Vec<Track>>,
-    sorted_indices: Arc<Vec<usize>>,
-    date_order: Arc<Vec<usize>>,
-    title_order: Arc<Vec<usize>>,
-    artist_order: Arc<Vec<usize>>,
-    album_order: Arc<Vec<usize>>,
-    duration_order: Arc<Vec<usize>>,
-    filtered_track_indices: Arc<Vec<usize>>,
-    albums: Arc<Vec<Album>>,
-    artists: Arc<Vec<Artist>>,
-    filtered_album_indices: Arc<Vec<usize>>,
-    filtered_artist_indices: Arc<Vec<usize>>,
-    search_query: String,
-    search: Option<Entity<SearchInput>>,
-    _search_subscription: Option<Subscription>,
-    playback_task: Option<Task<()>>,
-    generation: u64,
-    light: bool,
-    palette: crate::settings::PaletteName,
-    album_grid: bool,
-    preferences_task: Option<Task<()>>,
-    position_ms: u64,
-    volume: f32,
-    history: Vec<Track>,
-    continuation: VecDeque<Track>,
-    playback_order: Vec<Track>,
-    shuffle: bool,
-    repeat: RepeatMode,
-    folder_dialog_open: bool,
-    pending_queue: Vec<PathBuf>,
-    selected_track: Option<PathBuf>,
-    search_terms: Arc<Vec<String>>,
-    navigation: Vec<NavigationEntry>,
-    root_focus: Option<FocusHandle>,
-    scrolls: HashMap<String, UniformListScrollHandle>,
-    pending_offsets: HashMap<String, f32>,
-    _quit_subscription: Option<Subscription>,
-    status: Option<String>,
-    status_details: bool,
-    library_error: Option<String>,
-    overlay_focus: HashMap<String, FocusHandle>,
-    active_overlay: Option<&'static str>,
-    return_focus: Option<FocusHandle>,
-    scanning: bool,
-    library_unavailable: bool,
-    sort: SortMode,
-    sort_reversed: bool,
-    table_ratios: [f32; 4],
-    table_available: f32,
-    playback: Playback,
-    system_media: Option<SystemMediaControls>,
-    current_track: Option<Track>,
-    paused: bool,
-    queue: VecDeque<Track>,
-    page: Page,
-    selected_album: Option<(String, String)>,
-    selected_artist: Option<String>,
-    watcher: Option<RecommendedWatcher>,
-    reindex_task: Option<Task<()>>,
+    pub statistics: crate::statistics::Statistics,
+    pub statistics_tick: Option<std::time::Instant>,
+    pub artwork_modal: Option<PathBuf>,
+    pub menu_open: bool,
+    pub statistics_open: bool,
+    pub settings_open: bool,
+    pub settings_about: bool,
+    pub sidebar_collapsed: bool,
+    pub sidebar_width: f32,
+    pub sidebar_animation: Option<Task<()>>,
+    pub _activation_subscription: Option<Subscription>,
+    pub queue_sidebar_open: bool,
+    pub context_track: Option<Track>,
+    pub context_menu_position: Point<Pixels>,
+    pub seek_dragging: std::rc::Rc<std::cell::Cell<bool>>,
+    pub volume_dragging: std::rc::Rc<std::cell::Cell<bool>>,
+    pub root: Option<PathBuf>,
+    pub tracks: Arc<Vec<Track>>,
+    pub sorted_indices: Arc<Vec<usize>>,
+    pub date_order: Arc<Vec<usize>>,
+    pub title_order: Arc<Vec<usize>>,
+    pub artist_order: Arc<Vec<usize>>,
+    pub album_order: Arc<Vec<usize>>,
+    pub duration_order: Arc<Vec<usize>>,
+    pub filtered_track_indices: Arc<Vec<usize>>,
+    pub albums: Arc<Vec<Album>>,
+    pub artists: Arc<Vec<Artist>>,
+    pub filtered_album_indices: Arc<Vec<usize>>,
+    pub filtered_artist_indices: Arc<Vec<usize>>,
+    pub search_query: String,
+    pub search: Option<Entity<SearchInput>>,
+    pub _search_subscription: Option<Subscription>,
+    pub playback_task: Option<Task<()>>,
+    pub generation: u64,
+    pub light: bool,
+    pub palette: crate::settings::PaletteName,
+    pub album_grid: bool,
+    pub preferences_task: Option<Task<()>>,
+    pub position_ms: u64,
+    pub volume: f32,
+    pub history: Vec<Track>,
+    pub continuation: VecDeque<Track>,
+    pub playback_order: Vec<Track>,
+    pub shuffle: bool,
+    pub repeat: RepeatMode,
+    pub folder_dialog_open: bool,
+    pub pending_queue: Vec<PathBuf>,
+    pub selected_track: Option<PathBuf>,
+    pub search_terms: Arc<Vec<String>>,
+    pub navigation: Vec<NavigationEntry>,
+    pub root_focus: Option<FocusHandle>,
+    pub scrolls: HashMap<String, UniformListScrollHandle>,
+    pub pending_offsets: HashMap<String, f32>,
+    pub _quit_subscription: Option<Subscription>,
+    pub status: Option<String>,
+    pub status_details: bool,
+    pub library_error: Option<String>,
+    pub overlay_focus: HashMap<String, FocusHandle>,
+    pub active_overlay: Option<&'static str>,
+    pub return_focus: Option<FocusHandle>,
+    pub scanning: bool,
+    pub library_unavailable: bool,
+    pub sort: SortMode,
+    pub sort_reversed: bool,
+    pub table_ratios: [f32; 4],
+    pub table_available: f32,
+    pub playback: Playback,
+    pub system_media: Option<SystemMediaControls>,
+    pub current_track: Option<Track>,
+    pub paused: bool,
+    pub queue: VecDeque<Track>,
+    pub page: Page,
+    pub selected_album: Option<(String, String)>,
+    pub selected_artist: Option<String>,
+    pub watcher: Option<RecommendedWatcher>,
+    pub reindex_task: Option<Task<()>>,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-enum SortMode {
+pub enum SortMode {
     #[default]
     Date,
     Title,
@@ -106,7 +107,7 @@ enum SortMode {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-enum Page {
+pub enum Page {
     #[default]
     Tracks,
     Queue,
@@ -116,7 +117,7 @@ enum Page {
     ArtistDetail,
 }
 
-struct NavigationEntry {
+pub struct NavigationEntry {
     page: Page,
     album: Option<(String, String)>,
     artist: Option<String>,
@@ -293,7 +294,7 @@ impl AppView {
         }
         view
     }
-    fn persist(&self) {
+    pub fn persist(&self) {
         crate::settings::save(&crate::settings::Settings {
             library_root: self.root.clone(),
             light: self.light,
@@ -341,15 +342,7 @@ impl AppView {
                 .collect(),
         });
     }
-    fn save_later(&mut self, cx: &mut Context<Self>) {
-        self.preferences_task = Some(cx.spawn(async move |view, cx| {
-            cx.background_executor()
-                .timer(Duration::from_millis(350))
-                .await;
-            let _ = view.update(cx, |view, _| view.persist());
-        }));
-    }
-    fn prepare_tracks(&mut self, snapshot: LibrarySnapshot) {
+    pub fn prepare_tracks(&mut self, snapshot: LibrarySnapshot) {
         self.tracks = snapshot.tracks;
         self.albums = snapshot.albums;
         self.artists = snapshot.artists;
@@ -374,7 +367,7 @@ impl AppView {
         }
         self.rebuild_order();
     }
-    fn set_sort(&mut self, sort: SortMode, cx: &mut Context<Self>) {
+    pub fn set_sort(&mut self, sort: SortMode, cx: &mut Context<Self>) {
         self.sort_reversed = if self.sort == sort {
             !self.sort_reversed
         } else {
@@ -386,7 +379,7 @@ impl AppView {
         cx.notify();
     }
 
-    fn rebuild_order(&mut self) {
+    pub fn rebuild_order(&mut self) {
         self.sorted_indices = match self.sort {
             SortMode::Date => self.date_order.clone(),
             SortMode::Title => self.title_order.clone(),
@@ -461,7 +454,7 @@ impl AppView {
             artist: self.selected_artist.clone(),
         });
     }
-    fn set_page(&mut self, page: Page, cx: &mut Context<Self>) {
+    pub fn set_page(&mut self, page: Page, cx: &mut Context<Self>) {
         if self.page != page {
             self.remember_page();
             self.page = page;
@@ -483,21 +476,21 @@ impl AppView {
             cx.notify();
         }
     }
-    fn open_album(&mut self, title: String, artist: String, cx: &mut Context<Self>) {
+    pub fn open_album(&mut self, title: String, artist: String, cx: &mut Context<Self>) {
         self.remember_page();
         self.selected_album = Some((title, artist));
         self.page = Page::AlbumDetail;
         self.persist();
         cx.notify();
     }
-    fn open_artist(&mut self, artist: String, cx: &mut Context<Self>) {
+    pub fn open_artist(&mut self, artist: String, cx: &mut Context<Self>) {
         self.remember_page();
         self.selected_artist = Some(artist);
         self.page = Page::ArtistDetail;
         self.persist();
         cx.notify();
     }
-    fn detail_indices(&self) -> Arc<Vec<usize>> {
+    pub fn detail_indices(&self) -> Arc<Vec<usize>> {
         let indices = match self.page {
             Page::AlbumDetail => self
                 .selected_album
@@ -618,7 +611,7 @@ impl AppView {
         cx.notify();
         started
     }
-    fn play_track(&mut self, track: Track, cx: &mut Context<Self>) {
+    pub fn play_track(&mut self, track: Track, cx: &mut Context<Self>) {
         let context: Vec<Track> = if self.page == Page::Queue {
             self.queue.iter().cloned().collect()
         } else {
@@ -643,7 +636,7 @@ impl AppView {
         self.start_track(track, cx);
         self.persist();
     }
-    fn toggle_playback(&mut self, cx: &mut Context<Self>) {
+    pub fn toggle_playback(&mut self, cx: &mut Context<Self>) {
         if let Some(track) = self.current_track.clone() {
             if self.playback.is_finished() {
                 self.start_track(track, cx);
@@ -686,7 +679,7 @@ impl AppView {
         }
         self.continuation = remaining.into();
     }
-    fn toggle_shuffle(&mut self, cx: &mut Context<Self>) {
+    pub fn toggle_shuffle(&mut self, cx: &mut Context<Self>) {
         self.shuffle = !self.shuffle;
         if let Some(track) = &self.current_track {
             let path = track.path.clone();
@@ -695,7 +688,7 @@ impl AppView {
         self.persist();
         cx.notify();
     }
-    fn cycle_repeat(&mut self, cx: &mut Context<Self>) {
+    pub fn cycle_repeat(&mut self, cx: &mut Context<Self>) {
         self.repeat = self.repeat.next();
         self.persist();
         cx.notify();
@@ -752,7 +745,7 @@ impl AppView {
         }
         next
     }
-    fn play_next(&mut self, cx: &mut Context<Self>) {
+    pub fn play_next(&mut self, cx: &mut Context<Self>) {
         let next = self.next_track(false);
         if let Some(track) = next {
             self.start_track(track, cx);
@@ -762,7 +755,7 @@ impl AppView {
         }
         cx.notify();
     }
-    fn play_previous(&mut self, cx: &mut Context<Self>) {
+    pub fn play_previous(&mut self, cx: &mut Context<Self>) {
         if self.position_ms > 3000 {
             if self.playback.is_finished() {
                 if let Some(track) = self.current_track.clone() {
@@ -784,7 +777,7 @@ impl AppView {
         }
         cx.notify();
     }
-    fn choose_folder(&mut self, cx: &mut Context<Self>) {
+    pub fn choose_folder(&mut self, cx: &mut Context<Self>) {
         if self.folder_dialog_open {
             return;
         }
@@ -956,15 +949,15 @@ impl AppView {
 }
 
 #[derive(Clone, Copy)]
-struct Palette {
-    bg: u32,
-    panel: u32,
-    raised: u32,
-    line: u32,
-    text: u32,
-    muted: u32,
-    accent: u32,
-    accent_bg: u32,
+pub struct Palette {
+    pub bg: u32,
+    pub panel: u32,
+    pub raised: u32,
+    pub line: u32,
+    pub text: u32,
+    pub muted: u32,
+    pub accent: u32,
+    pub accent_bg: u32,
 }
 impl Palette {
     fn from_name(name: crate::settings::PaletteName, light: bool) -> Self {
@@ -981,14 +974,14 @@ impl Palette {
         }
     }
 }
-fn icon(name: &'static str, size: f32, color: u32) -> impl IntoElement {
+pub fn icon(name: &'static str, size: f32, color: u32) -> impl IntoElement {
     svg()
         .path(name)
         .size(px(size))
         .flex_shrink_0()
         .text_color(rgb(color))
 }
-struct Tip(String, Palette);
+pub struct Tip(pub String, pub Palette);
 impl Render for Tip {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         div()
@@ -1003,139 +996,28 @@ impl Render for Tip {
             .child(self.0.clone())
     }
 }
-fn icon_button(
-    id: impl Into<String>,
-    name: &'static str,
-    title: &'static str,
-    p: Palette,
-    enabled: bool,
-    primary: bool,
-    listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-) -> Stateful<Div> {
-    let id = id.into();
-    div()
-        .id(id.clone())
-        .debug_selector(move || id.clone())
-        .role(Role::Button)
-        .aria_label(title)
-        .border_1()
-        .border_color(rgba(0x00000000))
-        .size(px(if primary && title == "Play / pause · Space" {
-            38.
-        } else {
-            32.
-        }))
-        .flex_shrink_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .rounded_full()
-        .text_color(rgb(if !enabled {
-            p.muted
-        } else if primary {
-            p.bg
-        } else {
-            p.text
-        }))
-        .bg(rgb(if primary && enabled {
-            p.accent
-        } else {
-            p.panel
-        }))
-        .opacity(if enabled { 1. } else { 0.35 })
-        .when(enabled, |el| {
-            el.tab_index(0)
-                .focus_visible(move |style| style.border_color(rgb(p.accent)))
-                .cursor_pointer()
-                .hover(move |s| s.bg(rgb(if primary { p.text } else { p.raised })))
-                .active(move |s| s.bg(rgb(p.accent_bg)))
-                .on_click(listener)
-        })
-        .tooltip(move |_, cx| cx.new(|_| Tip(title.into(), p)).into())
-        .child(icon(
-            name,
-            if primary { 19. } else { 17. },
-            if primary && enabled { p.bg } else { p.text },
-        ))
-}
-fn icon_toggle_button(
-    id: &'static str,
-    name: &'static str,
-    title: &'static str,
-    p: Palette,
-    enabled: bool,
-    active: bool,
-    listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-) -> impl IntoElement {
-    div()
-        .id(id)
-        .role(Role::Button)
-        .aria_label(title)
-        .aria_toggled(if active {
-            Toggled::True
-        } else {
-            Toggled::False
-        })
-        .border_1()
-        .border_color(rgba(0x00000000))
-        .size(px(32.))
-        .flex_shrink_0()
-        .flex()
-        .items_center()
-        .justify_center()
-        .rounded_md()
-        .text_color(rgb(if active { p.accent } else { p.text }))
-        .bg(rgb(p.panel))
-        .opacity(if enabled { 1. } else { 0.35 })
-        .when(enabled, |el| {
-            el.tab_index(0)
-                .focus_visible(move |s| s.border_color(rgb(p.accent)))
-                .cursor_pointer()
-                .hover(move |s| s.text_color(rgb(p.accent)))
-                .on_click(listener)
-        })
-        .tooltip(move |_, cx| cx.new(|_| Tip(title.into(), p)).into())
-        .child(icon(name, 17., if active { p.accent } else { p.text }))
-}
-fn text_button(
-    id: impl Into<String>,
-    name: &'static str,
-    label: impl Into<String>,
-    p: Palette,
-    primary: bool,
-    listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-) -> impl IntoElement {
-    div()
-        .id(id.into())
-        .role(Role::Button)
-        .tab_index(0)
-        .border_1()
-        .border_color(rgba(0x00000000))
-        .focus_visible(move |style| style.border_color(rgb(p.accent)))
-        .flex()
-        .items_center()
-        .justify_center()
-        .gap_2()
-        .h(px(32.))
-        .px_3()
-        .rounded_md()
-        .cursor_pointer()
-        .text_size(px(12.))
-        .font_weight(FontWeight::MEDIUM)
-        .bg(rgb(if primary { p.accent } else { p.raised }))
-        .text_color(rgb(if primary { p.bg } else { p.text }))
-        .hover(move |s| s.bg(rgb(if primary { p.text } else { p.accent_bg })))
-        .active(move |s| s.opacity(0.7))
-        .on_click(listener)
-        .child(icon(name, 14., if primary { p.bg } else { p.text }))
-        .child(label.into())
-}
-fn artwork(path: Option<PathBuf>, label: String, size: f32, p: Palette) -> AnyElement {
+pub fn artwork(path: Option<PathBuf>, label: String, size: f32, p: Palette) -> AnyElement {
     match path {
         Some(path) => img(path)
             .size(px(size))
             .flex_shrink_0()
             .rounded_md()
+            .object_fit(ObjectFit::Cover)
+            .with_loading(move || placeholder(size, p).into_any_element())
+            .with_fallback(move || placeholder(size, p).into_any_element())
+            .into_any_element(),
+        None => {
+            let _ = label;
+            placeholder(size, p).into_any_element()
+        }
+    }
+}
+fn artist_cover(path: Option<PathBuf>, label: String, size: f32, p: Palette) -> AnyElement {
+    match path {
+        Some(path) => img(path)
+            .size(px(size))
+            .flex_shrink_0()
+            .rounded_full()
             .object_fit(ObjectFit::Cover)
             .with_loading(move || placeholder(size, p).into_any_element())
             .with_fallback(move || placeholder(size, p).into_any_element())
@@ -1160,13 +1042,13 @@ fn placeholder(size: f32, p: Palette) -> impl IntoElement {
         .text_color(rgb(p.muted))
         .child(icon("album", size * 0.35, p.muted))
 }
-fn label(text: impl Into<String>, p: Palette) -> impl IntoElement {
+pub fn label(text: impl Into<String>, p: Palette) -> impl IntoElement {
     div()
         .text_size(px(12.))
         .text_color(rgb(p.muted))
         .child(text.into())
 }
-fn duration(ms: u64) -> String {
+pub fn duration(ms: u64) -> String {
     let seconds = ms / 1000;
     format!("{}:{:02}", seconds / 60, seconds % 60)
 }
@@ -1191,177 +1073,10 @@ fn reveal_track(path: &PathBuf) {
     };
     let _ = command.spawn();
 }
-struct SliderValue {
-    fraction: f32,
-    maximum: f32,
-    step: f32,
-}
-
-fn rail(
-    id: &'static str,
-    value: SliderValue,
-    enabled: bool,
-    p: Palette,
-    tooltip_text: Option<String>,
-    dragging: std::rc::Rc<std::cell::Cell<bool>>,
-    callback: impl Fn(f32, &mut Window, &mut App) + 'static,
-) -> impl IntoElement {
-    use std::{cell::Cell, rc::Rc};
-    let SliderValue {
-        fraction: value,
-        maximum,
-        step,
-    } = value;
-    let fraction_step = if maximum > 0. { step / maximum } else { 0. };
-    let bounds = Rc::new(Cell::new(Bounds::<Pixels>::default()));
-    let painting = bounds.clone();
-    let callback = Rc::new(callback);
-    let click_callback = callback.clone();
-    let click_dragging = dragging.clone();
-    let is_dragging = dragging.get();
-    let key_callback = callback.clone();
-    div()
-        .id(id)
-        .debug_selector(move || format!("rail-{id}"))
-        .role(Role::Slider)
-        .aria_label(if id == "seek" {
-            "Playback position"
-        } else {
-            "Volume"
-        })
-        .aria_min_numeric_value(0.)
-        .aria_max_numeric_value(maximum as f64)
-        .aria_numeric_value((value.clamp(0., 1.) * maximum) as f64)
-        .aria_numeric_value_step(step as f64)
-        .aria_orientation(Orientation::Horizontal)
-        .aria_value(
-            tooltip_text
-                .clone()
-                .unwrap_or_else(|| format!("{:.0}%", value * 100.)),
-        )
-        .relative()
-        .group(format!("rail-{id}"))
-        .h(px(16.))
-        .w_full()
-        .when(enabled, |el| {
-            el.tab_index(0)
-                .focus_visible(move |s| s.bg(rgb(p.raised)))
-                .on_key_down(move |event: &KeyDownEvent, window, cx| {
-                    let target = match event.keystroke.key.as_str() {
-                        "left" | "down" => value - fraction_step,
-                        "right" | "up" => value + fraction_step,
-                        "home" => 0.,
-                        "end" => 1.,
-                        _ => return,
-                    };
-                    key_callback(target.clamp(0., 1.), window, cx);
-                    cx.stop_propagation();
-                })
-                .cursor_pointer()
-                .on_mouse_down(MouseButton::Left, move |event, window, cx| {
-                    let b = bounds.get();
-                    click_dragging.set(true);
-                    if b.size.width > px(0.) {
-                        click_callback(
-                            ((event.position.x - b.left()) / b.size.width).clamp(0., 1.),
-                            window,
-                            cx,
-                        );
-                    }
-                    cx.stop_propagation();
-                })
-        })
-        .child(
-            canvas(
-                move |b, _, _| {
-                    painting.set(b);
-                },
-                move |b, _, window, _| {
-                    let y = b.top() + b.size.height / 2. - px(1.5);
-                    window.paint_quad(fill(
-                        Bounds::new(point(b.left(), y), size(b.size.width, px(3.))),
-                        rgb(p.line),
-                    ));
-                    if enabled && value > 0. {
-                        window.paint_quad(fill(
-                            Bounds::new(
-                                point(b.left(), y),
-                                size(b.size.width * value.clamp(0., 1.), px(3.)),
-                            ),
-                            rgb(p.accent),
-                        ));
-                    }
-                    if enabled {
-                        let moving = dragging.clone();
-                        let moving_callback = callback.clone();
-                        window.on_mouse_event(move |event: &MouseMoveEvent, phase, window, cx| {
-                            if phase == DispatchPhase::Bubble
-                                && moving.get()
-                                && b.size.width > px(0.)
-                            {
-                                moving_callback(
-                                    ((event.position.x - b.left()) / b.size.width).clamp(0., 1.),
-                                    window,
-                                    cx,
-                                );
-                            }
-                        });
-                        let released = dragging.clone();
-                        let release_callback = callback.clone();
-                        window.on_mouse_event(move |event: &MouseUpEvent, phase, window, cx| {
-                            if phase == DispatchPhase::Bubble
-                                && event.button == MouseButton::Left
-                                && released.replace(false)
-                                && b.size.width > px(0.)
-                            {
-                                release_callback(
-                                    ((event.position.x - b.left()) / b.size.width).clamp(0., 1.),
-                                    window,
-                                    cx,
-                                );
-                                window.refresh();
-                            }
-                        });
-                    }
-                },
-            )
-            .size_full(),
-        )
-        .when(id == "seek" && enabled, |el| {
-            el.child(
-                div()
-                    .absolute()
-                    .left(relative(value.clamp(0., 1.)))
-                    .ml(px(-5.))
-                    .top(px(3.))
-                    .size(px(10.))
-                    .group("seek-thumb")
-                    .rounded_full()
-                    .bg(rgb(p.text))
-                    .opacity(if is_dragging { 1. } else { 0. })
-                    .group_hover(format!("rail-{id}"), |s| s.opacity(1.))
-                    .when_some(tooltip_text, |el, text| {
-                        el.child(
-                            div()
-                                .absolute()
-                                .debug_selector(|| "seek-time-tooltip".into())
-                                .w(px(54.))
-                                .left(px(-22.))
-                                .bottom(px(18.))
-                                .py_1()
-                                .rounded_md()
-                                .text_center()
-                                .whitespace_nowrap()
-                                .bg(rgb(p.raised))
-                                .text_color(rgb(p.text))
-                                .text_size(px(11.))
-                                .opacity(if is_dragging { 1. } else { 0. })
-                                .group_hover("seek-thumb", |s| s.opacity(1.))
-                                .child(text),
-                        )
-                    }),
-            )
-        })
+pub struct SliderValue {
+    pub fraction: f32,
+    pub maximum: f32,
+    pub step: f32,
 }
 
 impl AppView {
@@ -1389,7 +1104,7 @@ impl AppView {
             Page::ArtistDetail => self.selected_artist.clone().unwrap_or_default(),
         }
     }
-    fn page_key(&self) -> String {
+    pub fn page_key(&self) -> String {
         match self.page {
             Page::Tracks => "tracks".into(),
             Page::Queue => "queue".into(),
@@ -1399,7 +1114,7 @@ impl AppView {
             Page::ArtistDetail => format!("artist-{:?}", self.selected_artist),
         }
     }
-    fn overlay(&self) -> Option<&'static str> {
+    pub fn overlay(&self) -> Option<&'static str> {
         if self.artwork_modal.is_some() {
             Some("artwork")
         } else if self.settings_open {
@@ -1413,7 +1128,7 @@ impl AppView {
         }
     }
 
-    fn overlay_stops(&self) -> Vec<String> {
+    pub fn overlay_stops(&self) -> Vec<String> {
         match self.overlay() {
             Some("menu") => vec!["menu-statistics".into(), "menu-settings".into()],
             Some("settings") => {
@@ -1554,117 +1269,6 @@ impl AppView {
                 )
             })
     }
-    fn key(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
-        let key = &event.keystroke;
-        if key.key == "escape"
-            && (self.artwork_modal.is_some()
-                || self.menu_open
-                || self.statistics_open
-                || self.settings_open
-                || self.context_track.is_some())
-        {
-            self.artwork_modal = None;
-            self.menu_open = false;
-            self.statistics_open = false;
-            self.settings_open = false;
-            self.context_track = None;
-            cx.notify();
-            cx.stop_propagation();
-            return;
-        }
-        if self.overlay().is_some() {
-            if key.key == "tab" {
-                let stops = self.overlay_stops();
-                if !stops.is_empty() {
-                    let current = stops
-                        .iter()
-                        .position(|id| self.overlay_focus[id].is_focused(window));
-                    let index = match current {
-                        Some(i) if key.modifiers.shift => (i + stops.len() - 1) % stops.len(),
-                        Some(i) => (i + 1) % stops.len(),
-                        None if key.modifiers.shift => stops.len() - 1,
-                        None => 0,
-                    };
-                    window.focus(&self.overlay_focus[&stops[index]], cx);
-                }
-                cx.stop_propagation();
-            }
-            return;
-        }
-        if self.context_track.take().is_some() {
-            cx.notify();
-        }
-        if self.artwork_modal.is_some() || self.statistics_open || self.settings_open {
-            return;
-        }
-        if (key.modifiers.platform || key.modifiers.control) && key.key == "f" {
-            if let Some(search) = &self.search {
-                let focus = search.read(cx).focus.clone();
-                window.focus(&focus, cx);
-            }
-            cx.stop_propagation();
-            return;
-        }
-        if key.key == "tab" {
-            if key.modifiers.shift {
-                window.focus_prev(cx);
-            } else {
-                window.focus_next(cx);
-            }
-            cx.stop_propagation();
-            return;
-        }
-        if matches!(key.key.as_str(), "space" | "enter")
-            && self
-                .root_focus
-                .as_ref()
-                .is_some_and(|focus| !focus.is_focused(window))
-        {
-            return;
-        }
-        if self
-            .search
-            .as_ref()
-            .is_some_and(|search| search.read(cx).focus.is_focused(window))
-        {
-            return;
-        }
-        match key.key.as_str() {
-            "space" => self.toggle_playback(cx),
-            "enter" => {
-                if let Some(path) = &self.selected_track
-                    && let Some(track) = self
-                        .tracks
-                        .iter()
-                        .find(|track| &track.path == path)
-                        .cloned()
-                {
-                    self.play_track(track, cx);
-                }
-            }
-            "up" | "down" if !matches!(self.page, Page::Albums | Page::Artists | Page::Queue) => {
-                let indices = self.detail_indices();
-                if indices.is_empty() {
-                    return;
-                }
-                let current = indices.iter().position(|index| {
-                    self.selected_track.as_ref() == Some(&self.tracks[*index].path)
-                });
-                let index = match (current, key.key.as_str()) {
-                    (Some(index), "up") => index.saturating_sub(1),
-                    (Some(index), _) => (index + 1).min(indices.len() - 1),
-                    _ => 0,
-                };
-                self.selected_track = Some(self.tracks[indices[index]].path.clone());
-                if let Some(handle) = self.scrolls.get(&self.page_key()) {
-                    handle.scroll_to_item(index, ScrollStrategy::Nearest);
-                }
-                cx.notify();
-            }
-            _ => return,
-        }
-        cx.stop_propagation();
-    }
     fn hero(&self, p: Palette, cx: &mut Context<Self>) -> AnyElement {
         let indices = self.detail_indices();
         let first = indices.first().and_then(|index| self.tracks.get(*index));
@@ -1677,6 +1281,7 @@ impl AppView {
             .map(|album| album.duration_ms)
             .or_else(|| selected_artist.map(|artist| artist.duration_ms))
             .unwrap_or_default();
+        let genre = first.and_then(|track| track.genre.clone());
         let title = self.title();
         let artist = self.current_album().map(|album| album.artist.clone());
         let artwork_path = first.and_then(|track| track.cover_path.clone());
@@ -1699,12 +1304,21 @@ impl AppView {
                         this.artwork_modal = artwork_path.clone();
                         cx.notify();
                     }))
-                    .child(artwork(
-                        first.and_then(|t| t.cover_path.clone()),
-                        title.clone(),
-                        168.,
-                        p,
-                    )),
+                    .child(if self.page == Page::AlbumDetail {
+                        artwork(
+                            first.and_then(|t| t.cover_path.clone()),
+                            title.clone(),
+                            200.,
+                            p,
+                        )
+                    } else {
+                        artist_cover(
+                            first.and_then(|t| t.cover_path.clone()),
+                            title.clone(),
+                            200.,
+                            p,
+                        )
+                    }),
             )
             .child(
                 div()
@@ -1748,10 +1362,11 @@ impl AppView {
                     })
                     .child(label(
                         format!(
-                            "{}{} tracks · {} min",
+                            "{}{} tracks · {} min{}",
                             year.map_or(String::new(), |year| format!("{year} · ")),
                             indices.len(),
-                            total / 60000
+                            total / 60000,
+                            genre.map_or(String::new(), |genre| format!(" · {genre}"))
                         ),
                         p,
                     ))
@@ -1759,12 +1374,13 @@ impl AppView {
                         div()
                             .flex()
                             .gap_2()
-                            .child(text_button(
+                            .child(icon_button(
                                 "play-collection",
                                 "play",
                                 "Play",
                                 p,
                                 true,
+                                false,
                                 cx.listener(move |this, _, _, cx| {
                                     if let Some(track) = play.clone() {
                                         this.play_track(track, cx);
@@ -1830,287 +1446,6 @@ impl AppView {
             );
         }
         hero.into_any_element()
-    }
-    fn player(&self, p: Palette, cx: &mut Context<Self>) -> impl IntoElement {
-        let available =
-            self.current_track.is_some() || !self.tracks.is_empty() || !self.queue.is_empty();
-        let total = self
-            .current_track
-            .as_ref()
-            .map_or(0, |track| track.duration_ms);
-        let next = !self.queue.is_empty()
-            || !self.continuation.is_empty()
-            || (self.repeat == RepeatMode::All && !self.playback_order.is_empty());
-        let seek_view = cx.weak_entity();
-        let volume_view = cx.weak_entity();
-        div()
-            .debug_selector(|| "player-bar".into())
-            .h(px(94.))
-            .flex_shrink_0()
-            .border_t_1()
-            .border_color(rgb(p.line))
-            .bg(rgb(p.panel))
-            .px_5()
-            .flex()
-            .items_center()
-            .gap_5()
-            .child(
-                div()
-                    .w(px(0.))
-                    .flex_1()
-                    .min_w_0()
-                    .flex()
-                    .items_center()
-                    .gap_3()
-                    .child(
-                        div()
-                            .id("player-artwork")
-                            .cursor_pointer()
-                            .hover(move |s| s.opacity(0.8))
-                            .on_click(cx.listener(|this, _, _, cx| {
-                                this.artwork_modal = this
-                                    .current_track
-                                    .as_ref()
-                                    .and_then(|t| t.cover_path.clone());
-                                cx.notify();
-                            }))
-                            .child(artwork(
-                                self.current_track
-                                    .as_ref()
-                                    .and_then(|t| t.cover_path.clone()),
-                                String::new(),
-                                52.,
-                                p,
-                            )),
-                    )
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .flex()
-                            .flex_col()
-                            .gap_1()
-                            .child(
-                                div()
-                                    .id("player-title")
-                                    .cursor_pointer()
-                                    .hover(move |s| s.text_color(rgb(p.accent)))
-                                    .on_click(cx.listener(|this, _, _, cx| {
-                                        if let Some(t) = this.current_track.clone() {
-                                            this.open_album(t.album.clone(), album_artist(&t), cx);
-                                        }
-                                    }))
-                                    .text_size(px(13.))
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .truncate()
-                                    .child(
-                                        self.current_track
-                                            .as_ref()
-                                            .map_or("Nothing playing".into(), |t| t.title.clone()),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .flex()
-                                    .gap_1()
-                                    .min_w_0()
-                                    .overflow_hidden()
-                                    .when(self.current_track.is_none(), |el| {
-                                        el.child(label("Choose a track from your library", p))
-                                    })
-                                    .children(
-                                        self.current_track
-                                            .as_ref()
-                                            .map(|track| {
-                                                crate::library::split_artist_credits(&track.artist)
-                                            })
-                                            .unwrap_or_default()
-                                            .into_iter()
-                                            .enumerate()
-                                            .map(|(index, name)| {
-                                                let target = name.clone();
-                                                div()
-                                                    .id(format!("player-artist-{index}"))
-                                                    .flex_shrink_0()
-                                                    .cursor_pointer()
-                                                    .text_size(px(12.))
-                                                    .text_color(rgb(p.muted))
-                                                    .hover(move |s| s.text_color(rgb(p.accent)))
-                                                    .on_click(cx.listener(move |this, _, _, cx| {
-                                                        this.open_artist(target.clone(), cx)
-                                                    }))
-                                                    .child(if index == 0 {
-                                                        name
-                                                    } else {
-                                                        format!("· {name}")
-                                                    })
-                                            }),
-                                    ),
-                            ),
-                    ),
-            )
-            .child(
-                div()
-                    .w(px(0.))
-                    .flex_1()
-                    .min_w_0()
-                    .flex()
-                    .flex_col()
-                    .items_center()
-                    .gap_1()
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap_3()
-                            .child(icon_toggle_button(
-                                "shuffle-mode",
-                                "shuffle",
-                                "Shuffle",
-                                p,
-                                available,
-                                self.shuffle,
-                                cx.listener(|this, _, _, cx| this.toggle_shuffle(cx)),
-                            ))
-                            .child(icon_button(
-                                "previous",
-                                "previous",
-                                "Previous track",
-                                p,
-                                self.current_track.is_some(),
-                                false,
-                                cx.listener(|this, _, _, cx| this.play_previous(cx)),
-                            ))
-                            .child(icon_button(
-                                "toggle-playback",
-                                if self.current_track.is_none() || self.paused {
-                                    "play"
-                                } else {
-                                    "pause"
-                                },
-                                "Play / pause · Space",
-                                p,
-                                available,
-                                true,
-                                cx.listener(|this, _, _, cx| this.toggle_playback(cx)),
-                            ))
-                            .child(icon_button(
-                                "next",
-                                "next",
-                                "Next track",
-                                p,
-                                next,
-                                false,
-                                cx.listener(|this, _, _, cx| this.play_next(cx)),
-                            ))
-                            .child(icon_toggle_button(
-                                "repeat-mode",
-                                if self.repeat == RepeatMode::One {
-                                    "repeat-one"
-                                } else {
-                                    "repeat"
-                                },
-                                match self.repeat {
-                                    RepeatMode::Off => "Repeat: off",
-                                    RepeatMode::All => "Repeat: all",
-                                    RepeatMode::One => "Repeat: one",
-                                },
-                                p,
-                                available,
-                                self.repeat != RepeatMode::Off,
-                                cx.listener(|this, _, _, cx| this.cycle_repeat(cx)),
-                            )),
-                    )
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap_2()
-                            .w_full()
-                            .text_size(px(10.))
-                            .text_color(rgb(p.muted))
-                            .child(
-                                div()
-                                    .w(px(34.))
-                                    .text_right()
-                                    .child(duration(self.position_ms.min(total))),
-                            )
-                            .child(div().flex_1().child(rail(
-                                "seek",
-                                SliderValue {
-                                    fraction: if total > 0 {
-                                        self.position_ms as f32 / total as f32
-                                    } else {
-                                        0.
-                                    },
-                                    maximum: total as f32 / 1000.,
-                                    step: 5.,
-                                },
-                                total > 0,
-                                p,
-                                Some(duration(self.position_ms.min(total))),
-                                self.seek_dragging.clone(),
-                                move |fraction, _, cx| {
-                                    let _ = seek_view.update(cx, |this, cx| {
-                                        let target =
-                                            Duration::from_millis((fraction * total as f32) as u64);
-                                        if this.playback.seek(target) {
-                                            this.position_ms = target.as_millis() as u64;
-                                        } else {
-                                            this.status =
-                                                Some("Seeking is unavailable for this file".into());
-                                        }
-                                        cx.notify();
-                                    });
-                                },
-                            )))
-                            .child(div().w(px(34.)).child(duration(total))),
-                    ),
-            )
-            .child(
-                div()
-                    .w(px(0.))
-                    .flex_1()
-                    .min_w_0()
-                    .flex()
-                    .items_center()
-                    .justify_end()
-                    .gap_3()
-                    .child(icon("volume", 16., p.muted))
-                    .child(div().w(px(80.)).child(rail(
-                        "volume",
-                        SliderValue {
-                            fraction: self.volume,
-                            maximum: 100.,
-                            step: 5.,
-                        },
-                        true,
-                        p,
-                        None,
-                        self.volume_dragging.clone(),
-                        move |value, _, cx| {
-                            let _ = volume_view.update(cx, |this, cx| {
-                                this.volume = value;
-                                this.playback.set_volume(value);
-                                this.save_later(cx);
-                                cx.notify();
-                            });
-                        },
-                    )))
-                    .child(div().w(px(1.)).h(px(22.)).bg(rgb(p.line)))
-                    .child(icon_button(
-                        "open-queue",
-                        "queue",
-                        "Open play queue",
-                        p,
-                        true,
-                        false,
-                        cx.listener(|this, _, _, cx| {
-                            this.queue_sidebar_open = !this.queue_sidebar_open;
-                            cx.notify();
-                        }),
-                    )),
-            )
     }
 }
 impl Render for AppView {
@@ -2385,194 +1720,14 @@ fn empty_state(title: &'static str, description: &'static str, p: Palette) -> Di
         .child(label(description, p))
 }
 #[derive(Clone)]
-struct ColumnResize {
-    column: usize,
-    ratios: [f32; 4],
-    available: f32,
+pub struct ColumnResize {
+    pub column: usize,
+    pub ratios: [f32; 4],
+    pub available: f32,
 }
 impl Render for ColumnResize {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         div()
-    }
-}
-impl AppView {
-    fn table_header(&self, p: Palette, cx: &mut Context<Self>) -> impl IntoElement {
-        if self.page == Page::AlbumDetail {
-            return div()
-                .id("track-table-header")
-                .h(px(32.))
-                .flex_shrink_0()
-                .flex()
-                .items_center()
-                .px_3()
-                .border_b_1()
-                .border_color(rgb(p.line))
-                .text_size(px(10.))
-                .text_color(rgb(p.muted))
-                .child(div().w(px(34.)).flex_shrink_0().child("#"))
-                .child(div().flex_1().min_w_0().px_2().child("TITLE / ARTIST"))
-                .child(
-                    div()
-                        .w(px(88.))
-                        .flex_shrink_0()
-                        .px_2()
-                        .text_right()
-                        .child("LENGTH"),
-                )
-                .into_any_element();
-        }
-        let queued = self.page == Page::Queue;
-        let ratios = if self.table_ratios == [0.; 4] {
-            [0.44, 0.28, 0.20, 0.08]
-        } else {
-            self.table_ratios
-        };
-        let available = self.table_available.max(300.);
-        let mut header = div()
-            .id("track-table-header")
-            .h(px(32.))
-            .flex_shrink_0()
-            .flex()
-            .items_center()
-            .px_3()
-            .border_b_1()
-            .border_color(rgb(p.line))
-            .text_size(px(10.))
-            .text_color(rgb(p.muted))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(|this, _, _, _| this.persist()),
-            )
-            .on_drag_move(
-                cx.listener(|this, event: &DragMoveEvent<ColumnResize>, _, cx| {
-                    let drag = event.drag(cx);
-                    let boundary = f32::from(event.bounds.origin.x)
-                        + 46.
-                        + drag.ratios[..=drag.column].iter().sum::<f32>() * drag.available;
-                    let delta = (f32::from(event.event.position.x) - boundary) / drag.available;
-                    let col = drag.column;
-                    let delta = delta.clamp(0.07 - drag.ratios[col], drag.ratios[col + 1] - 0.07);
-                    this.table_ratios = drag.ratios;
-                    this.table_ratios[col] += delta;
-                    this.table_ratios[col + 1] -= delta;
-                    cx.notify();
-                }),
-            )
-            .child(div().w(px(34.)).flex_shrink_0().child("#"));
-        for (column, mode, title) in [
-            (0, SortMode::Title, "TITLE"),
-            (1, SortMode::Album, "ALBUM"),
-            (2, SortMode::Date, "DATE ADDED"),
-        ] {
-            let active = self.sort == mode;
-            let reversed = self.sort_reversed;
-            header = header.child(
-                div()
-                    .id(format!("column-{column}"))
-                    .relative()
-                    .w(px(ratios[column] * available))
-                    .flex_shrink_0()
-                    .h_full()
-                    .flex()
-                    .items_center()
-                    .min_w_0()
-                    .child(
-                        div()
-                            .id(format!("sort-column-{column}"))
-                            .flex_1()
-                            .min_w_0()
-                            .h_full()
-                            .flex()
-                            .items_center()
-                            .gap_1()
-                            .px_2()
-                            .cursor_pointer()
-                            .tab_index(0)
-                            .role(Role::Button)
-                            .aria_label(format!("Sort by {title}"))
-                            .text_color(rgb(if active { p.accent } else { p.muted }))
-                            .hover(move |s| s.text_color(rgb(p.text)).bg(rgb(p.raised)))
-                            .on_click(cx.listener(move |this, _, _, cx| this.set_sort(mode, cx)))
-                            .child(title)
-                            .when(active, |el| {
-                                el.child(icon(
-                                    if reversed ^ (mode == SortMode::Date) {
-                                        "down"
-                                    } else {
-                                        "up"
-                                    },
-                                    12.,
-                                    p.accent,
-                                ))
-                            }),
-                    )
-                    .when(column < 3, |el| {
-                        el.child(
-                            div()
-                                .id(format!("resize-column-{column}"))
-                                .absolute()
-                                .right(px(0.))
-                                .top_0()
-                                .w(px(8.))
-                                .h_full()
-                                .cursor(CursorStyle::ResizeLeftRight)
-                                .border_r_1()
-                                .border_color(rgb(p.line))
-                                .hover(move |s| s.bg(rgb(p.accent_bg)).border_color(rgb(p.accent)))
-                                .on_drag(
-                                    ColumnResize {
-                                        column,
-                                        ratios,
-                                        available,
-                                    },
-                                    move |drag, _, _, cx| {
-                                        let drag = drag.clone();
-                                        cx.new(|_| drag)
-                                    },
-                                ),
-                        )
-                    }),
-            );
-        }
-        header
-            .child(
-                div()
-                    .id("sort-duration")
-                    .w(px(ratios[3] * available))
-                    .flex_shrink_0()
-                    .h_full()
-                    .flex()
-                    .items_center()
-                    .justify_end()
-                    .gap_1()
-                    .pr_2()
-                    .cursor_pointer()
-                    .text_color(rgb(if self.sort == SortMode::Duration {
-                        p.accent
-                    } else {
-                        p.muted
-                    }))
-                    .hover(move |s| s.bg(rgb(p.raised)))
-                    .on_click(cx.listener(|this, _, _, cx| this.set_sort(SortMode::Duration, cx)))
-                    .child(icon(
-                        "clock",
-                        14.,
-                        if self.sort == SortMode::Duration {
-                            p.accent
-                        } else {
-                            p.muted
-                        },
-                    ))
-                    .when(self.sort == SortMode::Duration, |el| {
-                        el.child(icon(
-                            if self.sort_reversed { "down" } else { "up" },
-                            12.,
-                            p.accent,
-                        ))
-                    }),
-            )
-            .when(queued, |el| el.child(div().w(px(108.)).flex_shrink_0()))
-            .into_any_element()
     }
 }
 fn queue_sidebar_row(
@@ -2999,13 +2154,13 @@ fn artist_row(artist: Artist, index: usize, p: Palette, view: WeakEntity<AppView
         .on_click(move |_, _, cx| {
             let _ = view.update(cx, |this, cx| this.open_artist(name.clone(), cx));
         })
-        .child(artwork(artist.cover_path, artist.name.clone(), 58., p))
+        .child(artist_cover(artist.cover_path, artist.name.clone(), 68., p))
         .child(
             div()
                 .flex_1()
                 .min_w_0()
-                .text_size(px(15.))
-                .font_weight(FontWeight::MEDIUM)
+                .text_size(px(16.))
+                .font_weight(FontWeight::BOLD)
                 .truncate()
                 .child(artist.name),
         )
@@ -3054,17 +2209,22 @@ fn artist_grid_row(
                 })
                 .child(
                     div()
-                        .size(px(96.))
+                        .size(px(124.))
                         .rounded_full()
                         .overflow_hidden()
-                        .child(artwork(artist.cover_path, artist.name.clone(), 96., p)),
+                        .child(artist_cover(
+                            artist.cover_path,
+                            artist.name.clone(),
+                            124.,
+                            p,
+                        )),
                 )
                 .child(
                     div()
                         .w_full()
                         .text_center()
-                        .text_size(px(13.))
-                        .font_weight(FontWeight::MEDIUM)
+                        .text_size(px(14.))
+                        .font_weight(FontWeight::BOLD)
                         .truncate()
                         .child(artist.name),
                 )
@@ -3079,7 +2239,7 @@ fn artist_grid_row(
         }))
         .into_any_element()
 }
-struct LibrarySnapshot {
+pub struct LibrarySnapshot {
     skipped_files: usize,
     tracks: Arc<Vec<Track>>,
     albums: Arc<Vec<Album>>,
@@ -3092,7 +2252,7 @@ struct LibrarySnapshot {
     duration_order: Arc<Vec<usize>>,
 }
 impl LibrarySnapshot {
-    fn new(tracks: Vec<Track>) -> Self {
+    pub fn new(tracks: Vec<Track>) -> Self {
         let (albums, artists) = build_catalog(&tracks);
         let search_terms = tracks
             .iter()
@@ -3317,7 +2477,7 @@ fn album_grid_row(
 }
 
 impl AppView {
-    fn toggle_sidebar(&mut self, cx: &mut Context<Self>) {
+    pub fn toggle_sidebar(&mut self, cx: &mut Context<Self>) {
         self.sidebar_collapsed = !self.sidebar_collapsed;
         let start = if self.sidebar_width > 0. {
             self.sidebar_width
@@ -3350,157 +2510,6 @@ impl AppView {
 }
 
 impl AppView {
-    fn sidebar(&self, p: Palette, cx: &mut Context<Self>) -> impl IntoElement {
-        let active = match self.page {
-            Page::AlbumDetail => Page::Albums,
-            Page::ArtistDetail => Page::Artists,
-            page => page,
-        };
-        let collapsed = self.sidebar_collapsed;
-        let nav = [
-            (Page::Tracks, "music", "All tracks"),
-            (Page::Albums, "album", "Albums"),
-            (Page::Artists, "artist", "Artists"),
-        ];
-        div()
-            .debug_selector(|| "sidebar".into())
-            .group("sidebar")
-            .w(px(if self.sidebar_width > 0. {
-                self.sidebar_width
-            } else if collapsed {
-                64.
-            } else {
-                184.
-            }))
-            .overflow_hidden()
-            .flex_shrink_0()
-            .bg(rgb(p.panel))
-            .border_r_1()
-            .border_color(rgb(p.line))
-            .p_3()
-            .flex()
-            .flex_col()
-            .child(
-                div()
-                    .relative()
-                    .h(px(42.))
-                    .mb_6()
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .gap_2()
-                    .group("sidebar-logo")
-                    .child(
-                        div().when(collapsed, |el| el.opacity(0.)).child(
-                            svg()
-                                .path("brand")
-                                .w(px(36.))
-                                .h(px(34.))
-                                .flex_shrink_0()
-                                .text_color(rgb(p.text)),
-                        ),
-                    )
-                    .when(!collapsed, |el| {
-                        el.child(
-                            div()
-                                .text_size(px(19.))
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .child("flacpac"),
-                        )
-                    })
-                    .when(collapsed, |el| {
-                        el.child(div().absolute().left(px(4.)).top(px(5.)).child(icon_button(
-                            "expand-sidebar",
-                            "expand",
-                            "Expand sidebar",
-                            p,
-                            true,
-                            false,
-                            cx.listener(|this, _, _, cx| {
-                                this.toggle_sidebar(cx);
-                            }),
-                        )))
-                    })
-                    .when(!collapsed, |el| {
-                        el.child(div().child(icon_button(
-                            "collapse-sidebar",
-                            "collapse",
-                            "Collapse sidebar",
-                            p,
-                            true,
-                            false,
-                            cx.listener(|this, _, _, cx| {
-                                this.toggle_sidebar(cx);
-                            }),
-                        )))
-                    }),
-            )
-            .children(nav.into_iter().map(|(target, name, title)| {
-                div()
-                    .id(format!("nav-{target:?}"))
-                    .tab_index(0)
-                    .role(Role::Button)
-                    .aria_label(title)
-                    .focus_visible(move |style| style.bg(rgb(p.raised)))
-                    .h(px(38.))
-                    .px_3()
-                    .mb_1()
-                    .rounded_md()
-                    .flex()
-                    .items_center()
-                    .gap_3()
-                    .cursor_pointer()
-                    .bg(rgb(if active == target {
-                        p.accent_bg
-                    } else {
-                        p.panel
-                    }))
-                    .text_color(rgb(if active == target { p.accent } else { p.muted }))
-                    .text_size(px(13.))
-                    .hover(move |style| style.bg(rgb(p.raised)).text_color(rgb(p.text)))
-                    .on_click(cx.listener(move |this, _, _, cx| {
-                        if target == Page::Queue {
-                            this.queue_sidebar_open = !this.queue_sidebar_open;
-                            cx.notify();
-                        } else {
-                            this.set_page(target, cx);
-                        }
-                    }))
-                    .child(icon(
-                        name,
-                        17.,
-                        if active == target { p.accent } else { p.muted },
-                    ))
-                    .when(!collapsed, |el| el.child(title))
-                    .tooltip(move |_, cx| cx.new(|_| Tip(title.into(), p)).into())
-            }))
-            .child(
-                div().mt_auto().flex().flex_col().gap_2().child(
-                    div()
-                        .id("library-folder")
-                        .tab_index(0)
-                        .role(Role::Button)
-                        .aria_label("Music folder")
-                        .focus_visible(move |style| style.bg(rgb(p.raised)))
-                        .h(px(38.))
-                        .px_3()
-                        .mb_1()
-                        .rounded_md()
-                        .flex()
-                        .items_center()
-                        .gap_3()
-                        .cursor_pointer()
-                        .bg(rgb(p.panel))
-                        .text_color(rgb(p.muted))
-                        .text_size(px(13.))
-                        .hover(move |style| style.bg(rgb(p.raised)).text_color(rgb(p.text)))
-                        .on_click(cx.listener(|this, _, _, cx| this.choose_folder(cx)))
-                        .child(icon("folder", 17., p.muted))
-                        .when(!collapsed, |el| el.child("Music folder"))
-                        .tooltip(move |_, cx| cx.new(|_| Tip("Music folder".into(), p)).into()),
-                ),
-            )
-    }
     fn header(&self, p: Palette, cx: &mut Context<Self>) -> Div {
         div()
             .debug_selector(|| "app-header".into())
@@ -3541,35 +2550,21 @@ impl AppView {
             )
             .when_some(self.search.clone(), |el, search| el.child(search))
             .child(
-                div()
-                    .flex_1()
-                    .flex()
-                    .justify_end()
-                    .gap_2()
-                    .child(icon_button(
-                        "add-folder",
-                        "folder",
-                        "Choose music folder",
+                div().flex_1().flex().justify_end().gap_2().child(
+                    icon_button(
+                        "app-menu",
+                        "menu",
+                        "Application menu",
                         p,
                         true,
-                        false,
-                        cx.listener(|this, _, _, cx| this.choose_folder(cx)),
-                    ))
-                    .child(
-                        icon_button(
-                            "app-menu",
-                            "menu",
-                            "Application menu",
-                            p,
-                            true,
-                            self.menu_open,
-                            cx.listener(|this, _, _, cx| {
-                                this.menu_open = !this.menu_open;
-                                cx.notify();
-                            }),
-                        )
-                        .track_focus(&self.overlay_focus["app-menu"]),
-                    ),
+                        self.menu_open,
+                        cx.listener(|this, _, _, cx| {
+                            this.menu_open = !this.menu_open;
+                            cx.notify();
+                        }),
+                    )
+                    .track_focus(&self.overlay_focus["app-menu"]),
+                ),
             )
     }
     fn toolbar(&self, count: usize, p: Palette, cx: &mut Context<Self>) -> Div {
@@ -3808,9 +2803,9 @@ impl AppView {
                 div()
                     .px_3()
                     .py_2()
-                    .text_size(px(11.))
+                    .text_size(px(12.))
                     .text_color(rgb(p.muted))
-                    .child("APPLICATION"),
+                    .child("Application"),
             )
             .child(
                 div()
@@ -3836,32 +2831,6 @@ impl AppView {
                             .gap_2()
                             .child(icon("statistics", 16., p.text))
                             .child("Listening statistics"),
-                    ),
-            )
-            .child(
-                div()
-                    .id("menu-settings")
-                    .track_focus(&self.overlay_focus["menu-settings"])
-                    .tab_index(0)
-                    .role(Role::Button)
-                    .focus_visible(move |s| s.bg(rgb(p.accent_bg)))
-                    .px_3()
-                    .py_3()
-                    .rounded_md()
-                    .cursor_pointer()
-                    .hover(move |s| s.bg(rgb(p.accent_bg)))
-                    .on_click(cx.listener(|this, _, _, cx| {
-                        this.menu_open = false;
-                        this.settings_open = true;
-                        cx.notify();
-                    }))
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap_2()
-                            .child(icon("settings", 16., p.text))
-                            .child("Settings"),
                     ),
             )
             .into_any_element()
@@ -4418,60 +3387,13 @@ impl AppView {
     }
 }
 
-impl AppView {
-    fn statistics_content(&self, p: Palette) -> AnyElement {
-        let groups = [
-            ("Top artists", self.statistics.top_artists(5)),
-            ("Top tracks", self.statistics.top_tracks(5)),
-            ("Top albums", self.statistics.top_albums(5)),
-        ];
-        div()
-            .flex()
-            .gap_5()
-            .mt_5()
-            .children(groups.into_iter().map(|(title, entries)| {
-                div()
-                    .flex_1()
-                    .min_w_0()
-                    .child(div().font_weight(FontWeight::SEMIBOLD).mb_3().child(title))
-                    .when(entries.is_empty(), |el| {
-                        el.child(label("Play music to start collecting statistics", p))
-                    })
-                    .children(entries.into_iter().enumerate().map(|(index, item)| {
-                        div()
-                            .py_2()
-                            .border_b_1()
-                            .border_color(rgb(p.line))
-                            .child(
-                                div()
-                                    .flex()
-                                    .items_center()
-                                    .gap_2()
-                                    .child(artwork(item.cover_path, String::new(), 28., p))
-                                    .child(div().flex_1().min_w_0().truncate().child(format!(
-                                        "{}. {}",
-                                        index + 1,
-                                        item.title
-                                    ))),
-                            )
-                            .child(label(item.subtitle, p))
-                            .child(label(
-                                format!("{} min · {} plays", item.listened_ms / 60000, item.plays),
-                                p,
-                            ))
-                    }))
-            }))
-            .into_any_element()
-    }
-}
-
 fn unix_now_ms() -> u128 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis()
 }
-fn format_added(added: u128, now: u128) -> String {
+pub fn format_added(added: u128, now: u128) -> String {
     if added == 0 {
         return "—".into();
     }
@@ -4508,57 +3430,9 @@ fn format_added(added: u128, now: u128) -> String {
 }
 
 #[cfg(test)]
-mod table_tests {
-    use super::*;
-    #[::core::prelude::v1::test]
-    fn table_album_duration_orders_reverse_without_changing_tracks() {
-        let mut view = AppView {
-            tracks: Arc::new(vec![
-                Track {
-                    album: "Zulu".into(),
-                    duration_ms: 100,
-                    ..Track::default()
-                },
-                Track {
-                    album: "alpha".into(),
-                    duration_ms: 300,
-                    ..Track::default()
-                },
-                Track {
-                    album: "Beta".into(),
-                    duration_ms: 200,
-                    ..Track::default()
-                },
-            ]),
-            sort: SortMode::Album,
-            ..AppView::default()
-        };
-        view.prepare_tracks(LibrarySnapshot::new(view.tracks.as_ref().clone()));
-        assert_eq!(*view.filtered_track_indices, vec![1, 2, 0]);
-        view.sort = SortMode::Duration;
-        view.sort_reversed = true;
-        view.rebuild_order();
-        assert_eq!(*view.filtered_track_indices, vec![1, 2, 0]);
-        assert_eq!(view.tracks[0].album, "Zulu");
-    }
-    #[::core::prelude::v1::test]
-    fn added_dates_match_relative_month_boundary() {
-        let day = 86_400_000;
-        let added = 1_704_412_800_000; // Jan 5, 2024, UTC.
-        assert_eq!(format_added(0, added), "—");
-        assert_eq!(format_added(added, added + 30_000), "30 seconds ago");
-        assert_eq!(format_added(added, added + 60_000), "1 minute ago");
-        assert_eq!(format_added(added, added + 3_600_000), "1 hour ago");
-        assert_eq!(format_added(added, added + day), "1 day ago");
-        assert_eq!(format_added(added, added + 14 * day), "2 weeks ago");
-        assert_eq!(format_added(added, added + 30 * day), "Jan 5, 2024");
-        assert_eq!(format_added(added, added - 1), "Jan 5, 2024");
-    }
-}
-
-#[cfg(test)]
 mod interaction_regressions {
-    use super::{AppView, LibrarySnapshot, Page, Palette, duration, rail};
+    use super::{AppView, LibrarySnapshot, Page, Palette, duration};
+    use crate::components::rail;
     use crate::library::Track;
     use gpui::{
         Context, IntoElement, Modifiers, MouseButton, Render, TestAppContext, Window, div, point,
@@ -4789,7 +3663,8 @@ mod interaction_regressions {
 
 #[cfg(test)]
 mod design_regressions {
-    use super::{AppView, Page, Palette, SliderValue, Track, rail};
+    use super::{AppView, Page, Palette, SliderValue, Track};
+    use crate::components::rail;
     use gpui::{
         AppContext, Context, FocusHandle, IntoElement, Modifiers, MouseButton, Render,
         TestAppContext, Window, div, point, prelude::*, px,

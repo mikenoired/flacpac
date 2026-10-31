@@ -1,5 +1,7 @@
 mod cache;
+mod components;
 mod icons;
+mod key;
 mod library;
 mod media_controls;
 mod playback;
@@ -7,6 +9,7 @@ mod search;
 mod settings;
 mod statistics;
 mod ui;
+mod views;
 
 use gpui::{App, AppContext, QuitMode, WindowOptions};
 use ui::AppView;

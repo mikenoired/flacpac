@@ -84,6 +84,7 @@ fn load_from(connection: &Connection, root: &Path) -> Result<Vec<Track>, CacheEr
             album: row.get(3)?,
             duration_ms: row.get::<_, i64>(4)?.max(0) as u64,
             modified_unix_ms: row.get::<_, i64>(5)?.max(0) as u128,
+            genre: row.get(6)?,
             cover_path: cover_path.map(PathBuf::from),
             album_artist: String::new(),
             track_number: 0,

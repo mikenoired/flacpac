@@ -17,6 +17,7 @@ pub struct Track {
     pub title: String,
     pub artist: String,
     pub album: String,
+    pub genre: Option<String>,
     pub duration_ms: u64,
     pub modified_unix_ms: u128,
     pub cover_path: Option<PathBuf>,
@@ -152,6 +153,7 @@ impl Library {
                     .and_then(|t| t.album())
                     .map(|s| s.to_string())
                     .unwrap_or_else(|| "Unknown album".into()),
+                genre: tag.and_then(|t| t.genre()).map(|s| s.to_string()),
                 duration_ms: properties.duration().as_millis() as u64,
                 modified_unix_ms,
                 cover_path,
