@@ -97,6 +97,14 @@ Music files are read without modifying their tags or contents.
 
 ## Development
 
+Icons use the bundled [Phosphor Icons](https://phosphoricons.com/) SVG library.
+Use an icon by its weight and kebab-case name, for example
+`icon("phosphor/regular/heart", 18., color)`. Available weights are `thin`,
+`light`, `regular`, `bold`, `fill`, and `duotone`. The assets are included in
+the application at build time, so icon rendering does not need a network
+connection. Phosphor is distributed under the MIT license; see
+`assets/phosphor-LICENSE`.
+
 `rust-toolchain.toml` pins the compiler, Clippy, and rustfmt used locally and in
 CI. Update the pinned version in a separate change and run the checks below.
 Pull requests and pushes to `main` run checks on Apple Silicon and Intel macOS.
