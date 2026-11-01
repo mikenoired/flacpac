@@ -1,5 +1,5 @@
 use crate::components::icon_button;
-use crate::components::player_block::rail;
+use crate::components::rail;
 use crate::library::album_artist;
 use crate::playback::RepeatMode;
 use crate::ui::SliderValue;
