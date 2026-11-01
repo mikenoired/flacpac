@@ -22,7 +22,7 @@ fn legacy_icon(name: &str) -> Option<&'static str> {
         "repeat-one" => "regular/repeat-once",
         "grid" => "regular/squares-four",
         "list" => "regular/list-bullets",
-        "play" => "fill/play-fill",
+        "play" => "fill/play",
         "pause" => "regular/pause",
         "next" => "regular/skip-forward",
         "previous" => "regular/skip-back",

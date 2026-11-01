@@ -97,12 +97,17 @@ Music files are read without modifying their tags or contents.
 
 ## Development
 
-Icons use the bundled [Phosphor Icons](https://phosphoricons.com/) SVG library.
+Icons use [Phosphor Icons](https://phosphoricons.com/). During the first Cargo
+build, `build.rs` downloads the pinned official SVG package, verifies its
+SHA-512 checksum, and embeds it in the application. Cargo commands that compile
+the app, including Clippy, run this step automatically. The SVG files stay in
+Cargo's build directory and are not tracked in this repository; the first build
+needs network access, while running the built app does not.
+
 Use an icon by its weight and kebab-case name, for example
 `icon("phosphor/regular/heart", 18., color)`. Available weights are `thin`,
-`light`, `regular`, `bold`, `fill`, and `duotone`. The assets are included in
-the application at build time, so icon rendering does not need a network
-connection. Phosphor is distributed under the MIT license; see
+`light`, `regular`, `bold`, `fill`, and `duotone`. Phosphor is distributed under
+the MIT license; see
 `assets/phosphor-LICENSE`.
 
 `rust-toolchain.toml` pins the compiler, Clippy, and rustfmt used locally and in

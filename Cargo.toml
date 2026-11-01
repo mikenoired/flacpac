@@ -31,3 +31,9 @@ unsafe_code = "forbid"
 
 [dev-dependencies]
 gpui = { package = "gpui-ce", version = "=0.2.2", features = ["test-support"] }
+
+[build-dependencies]
+ureq = "2.12"
+flate2 = "1"
+tar = "0.4"
+sha2 = "0.10"
